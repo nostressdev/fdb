@@ -1,4 +1,4 @@
-package fdb
+package scheme
 
 type GeneratorConfig struct {
 	Models []Model
