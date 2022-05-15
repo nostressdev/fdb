@@ -8,8 +8,6 @@ type GeneratorConfig struct {
 type Model struct {
 	Name          string
 	Fields        map[string]Field
-	Indexes       []Index
-	TextIndexes   []TextIndex
 	ExternalModel string // продумать как хранить инфу о протобафе, может что то дополнительное
 }
 
@@ -22,6 +20,7 @@ type Field struct {
 type Table struct {
 	Name        string
 	StoragePath string
+	Indexes     []Index
 	Columns     map[string]Column
 	PK          []string // column names
 }
@@ -37,13 +36,4 @@ type Index struct {
 	IK      []string // column names
 	Columns []string
 	Async   bool
-}
-
-type TextIndex struct {
-	Name          string
-	IK            []string // column names
-	SK            []string // вот тут вопрос не помню что это должно быть
-	Columns       []string
-	Async         bool
-	QueryAnalyzer interface{}
 }
