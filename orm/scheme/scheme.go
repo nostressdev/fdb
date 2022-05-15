@@ -9,6 +9,7 @@ type Model struct {
 	Name          string
 	Fields        map[string]Field
 	Indexes       []Index
+	TextIndexes   []TextIndex
 	ExternalModel string // продумать как хранить инфу о протобафе, может что то дополнительное
 }
 
