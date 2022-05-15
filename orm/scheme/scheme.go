@@ -18,11 +18,11 @@ type Field struct {
 }
 
 type Table struct {
-	Name        string
-	StoragePath string
-	Indexes     []Index
-	Columns     map[string]Column
-	PK          []string // column names
+	Name         string
+	StoragePath  string
+	RangeIndexes []RangeIndex
+	Columns      map[string]Column
+	PK           []string // column names
 }
 
 type Column struct {
@@ -31,7 +31,7 @@ type Column struct {
 	DefaultValue interface{}
 }
 
-type Index struct {
+type RangeIndex struct {
 	Name    string
 	IK      []string // column names
 	Columns []string
