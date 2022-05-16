@@ -142,6 +142,22 @@ func MustNewUsersTableRow(jsonBytes []byte) *UsersTableRow {
 	return model
 }
 
+type FutureUserTableRow struct {
+	Future fdb.FutureByteSlice
+}
+
+func (future *FutureUserTableRow) Get() (*UsersTableRow, error) {
+	valueJson, err := future.Future.Get()
+	if err != nil {
+		return nil, err
+	}
+	return NewUsersTableRow(valueJson)
+}
+
+func (future *FutureUserTableRow) MustGet() *UsersTableRow {
+	return MustNewUsersTableRow(future.Future.MustGet())
+}
+
 func (model *UsersTableRow) ToJson() ([]byte, error) {
 	return json.Marshal(model)
 }
@@ -171,25 +187,22 @@ func (pk *UsersTablePK) Pack() ([]tuple.TupleElement, error) {
 	return []tuple.TupleElement{pkIDBytes, pkTsBytes}, nil
 }
 
-func (table *UsersTable) Get(tr fdb.ReadTransaction, pk *UsersTablePK) (*UsersTableRow, error) {
+func (table *UsersTable) Get(tr fdb.ReadTransaction, pk *UsersTablePK) (*FutureUserTableRow, error) {
 	key, err := pk.Pack()
 	if err != nil {
 		return nil, err
 	}
 
-	valueJson, err := tr.Get(table.Subspace.Sub(key)).Get()
-	if err != nil {
-		return nil, err
-	}
-	return NewUsersTableRow(valueJson)
+	future := tr.Get(table.Subspace.Sub(key))
+	return &FutureUserTableRow{Future: future}, nil
 }
 
-func (table *UsersTable) MustGet(tr fdb.ReadTransaction, pk *UsersTablePK) *UsersTableRow {
-	value, err := table.Get(tr, pk)
+func (table *UsersTable) MustGet(tr fdb.ReadTransaction, pk *UsersTablePK) *FutureUserTableRow {
+	future, err := table.Get(tr, pk)
 	if err != nil {
 		panic(err)
 	}
-	return value
+	return future
 }
 
 func (table *UsersTable) Insert(tr fdb.Transaction, model *UsersTableRow) error {
