@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"github.com/apple/foundationdb/bindings/go/src/fdb"
 	"github.com/apple/foundationdb/bindings/go/src/fdb/subspace"
+	"github.com/apple/foundationdb/bindings/go/src/fdb/tuple"
 	"github.com/nostressdev/fdb/orm/scheme"
 	"sync"
 )
@@ -89,7 +90,7 @@ func (key *KeyUint64) MustKey() []byte {
 // scheme.Model
 // {
 //		name: "User",
-//		Fields:
+//		Fields: // такой же вопрос как и к колонкам
 //		[
 //			{
 //				name: "ID",
@@ -106,7 +107,8 @@ func (key *KeyUint64) MustKey() []byte {
 // scheme.Table
 // {
 //		name: "Users",
-//		PK: ["ID", "Points"]
+//      columns: ["user": {"User"}, "ts": {"uint64"}] // почему Columns это мэп, а не список, если имя к колонки есть в структуре
+//		PK: ["ts", "user.ID"]
 // }
 
 type UsersTable struct {
@@ -119,27 +121,32 @@ type User struct {
 	Points uint64 `json:"points"`
 }
 
-func NewUser(jsonBytes []byte) (*User, error) {
-	model := &User{}
+type UsersTableRow struct {
+	User User   `json:"user"`
+	Ts   uint64 `json:"ts"`
+}
+
+func NewUsersTableRow(jsonBytes []byte) (*UsersTableRow, error) {
+	model := &UsersTableRow{}
 	if err := json.Unmarshal(jsonBytes, model); err != nil {
 		return nil, err
 	}
 	return model, nil
 }
 
-func MustNewUser(jsonBytes []byte) *User {
-	model := &User{}
+func MustNewUsersTableRow(jsonBytes []byte) *UsersTableRow {
+	model := &UsersTableRow{}
 	if err := json.Unmarshal(jsonBytes, model); err != nil {
 		panic(err)
 	}
 	return model
 }
 
-func (model *User) ToJson() ([]byte, error) {
+func (model *UsersTableRow) ToJson() ([]byte, error) {
 	return json.Marshal(model)
 }
 
-func (model *User) MustToJson() []byte {
+func (model *UsersTableRow) MustToJson() []byte {
 	if value, err := json.Marshal(model); err != nil {
 		panic(err)
 	} else {
@@ -148,94 +155,81 @@ func (model *User) MustToJson() []byte {
 }
 
 type UsersTablePK struct {
-	ID     Key // string
-	Points Key // uint64
+	ID Key // string
+	Ts Key // uint64
 }
 
-type UsersTablePKBytes struct {
-	IDBytes     []byte // string
-	PointsBytes []byte // uint64
-}
-
-func (table *UsersTable) Get(tr fdb.ReadTransaction, pk *UsersTablePK) (*User, error) {
-	pkBytes := &UsersTablePKBytes{}
-	if pkIDBytes, err := pk.ID.Key(); err != nil {
-		return nil, err
-	} else {
-		pkBytes.IDBytes = pkIDBytes
-	}
-	if pkPointsBytes, err := pk.Points.Key(); err != nil {
-		return nil, err
-	} else {
-		pkBytes.PointsBytes = pkPointsBytes
-	}
-
-	valueJson, err := tr.Get(table.Subspace.Sub(pkBytes.IDBytes, pkBytes.PointsBytes)).Get()
+func (pk *UsersTablePK) Pack() ([]tuple.TupleElement, error) {
+	pkIDBytes, err := pk.ID.Key()
 	if err != nil {
 		return nil, err
 	}
-	return NewUser(valueJson)
-}
-
-func (table *UsersTable) MustGet(tr fdb.ReadTransaction, pk *UsersTablePK) *User {
-	pkBytes := &UsersTablePKBytes{}
-	pkBytes.IDBytes = pk.ID.MustKey()
-	pkBytes.PointsBytes = pk.Points.MustKey()
-
-	return MustNewUser(tr.Get(table.Subspace.Sub(pkBytes.IDBytes, pkBytes.PointsBytes)).MustGet())
-}
-
-func (table *UsersTable) Insert(tr fdb.Transaction, pk *UsersTablePK, model *User) error {
-	pkBytes := &UsersTablePKBytes{}
-	if pkIDBytes, err := pk.ID.Key(); err != nil {
-		return err
-	} else {
-		pkBytes.IDBytes = pkIDBytes
+	pkTsBytes, err := pk.Ts.Key()
+	if err != nil {
+		return nil, err
 	}
-	if pkPointsBytes, err := pk.Points.Key(); err != nil {
+	return []tuple.TupleElement{pkIDBytes, pkTsBytes}, nil
+}
+
+func (table *UsersTable) Get(tr fdb.ReadTransaction, pk *UsersTablePK) (*UsersTableRow, error) {
+	key, err := pk.Pack()
+	if err != nil {
+		return nil, err
+	}
+
+	valueJson, err := tr.Get(table.Subspace.Sub(key)).Get()
+	if err != nil {
+		return nil, err
+	}
+	return NewUsersTableRow(valueJson)
+}
+
+func (table *UsersTable) MustGet(tr fdb.ReadTransaction, pk *UsersTablePK) *UsersTableRow {
+	value, err := table.Get(tr, pk)
+	if err != nil {
+		panic(err)
+	}
+	return value
+}
+
+func (table *UsersTable) Insert(tr fdb.Transaction, model *UsersTableRow) error {
+	pk := &UsersTablePK{
+		ID: &KeyString{model.User.ID},
+		Ts: &KeyUint64{model.Ts},
+	}
+	key, err := pk.Pack()
+	if err != nil {
 		return err
-	} else {
-		pkBytes.PointsBytes = pkPointsBytes
 	}
 
 	valueJson, err := model.ToJson()
 	if err != nil {
 		return err
 	}
-	tr.Set(table.Subspace.Sub(pkBytes.IDBytes, pkBytes.PointsBytes), valueJson)
+	tr.Set(table.Subspace.Sub(key), valueJson)
 	return nil
 }
 
-func (table *UsersTable) MustInsert(tr fdb.Transaction, pk *UsersTablePK, model *User) {
-	pkBytes := &UsersTablePKBytes{}
-	pkBytes.IDBytes = pk.ID.MustKey()
-	pkBytes.PointsBytes = pk.Points.MustKey()
-
-	valueJson := model.MustToJson()
-	tr.Set(table.Subspace.Sub(pkBytes.IDBytes, pkBytes.PointsBytes), valueJson)
+func (table *UsersTable) MustInsert(tr fdb.Transaction, model *UsersTableRow) {
+	err := table.Insert(tr, model)
+	if err != nil {
+		panic(err)
+	}
 }
 
 func (table *UsersTable) Delete(tr fdb.Transaction, pk *UsersTablePK) error {
-	pkBytes := &UsersTablePKBytes{}
-	if pkIDBytes, err := pk.ID.Key(); err != nil {
+	key, err := pk.Pack()
+	if err != nil {
 		return err
-	} else {
-		pkBytes.IDBytes = pkIDBytes
-	}
-	if pkPointsBytes, err := pk.Points.Key(); err != nil {
-		return err
-	} else {
-		pkBytes.PointsBytes = pkPointsBytes
 	}
 
-	tr.Clear(table.Subspace.Sub(pkBytes.IDBytes, pkBytes.PointsBytes))
+	tr.Clear(table.Subspace.Sub(key))
 	return nil
 }
 
 func (table *UsersTable) MustDelete(tr fdb.Transaction, pk *UsersTablePK) {
-	pkBytes := &UsersTablePKBytes{}
-	pkBytes.IDBytes = pk.ID.MustKey()
-	pkBytes.PointsBytes = pk.Points.MustKey()
-
-	tr.Clear(table.Subspace.Sub(pkBytes.IDBytes, pkBytes.PointsBytes))
+	err := table.Delete(tr, pk)
+	if err != nil {
+		panic(err)
+	}
 }
