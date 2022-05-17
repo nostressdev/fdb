@@ -229,7 +229,7 @@ func (table *UsersTable) Get(tr fdb.ReadTransaction, pk *UsersTablePK) (*FutureU
 	}
 
 	future := tr.Get(table.Subspace.Sub(key))
-	return &FutureUserTableRow{Future: future}, nil
+	return &FutureUserTableRow{Future: future, Encoder: table.Encoder}, nil
 }
 
 func (table *UsersTable) MustGet(tr fdb.ReadTransaction, pk *UsersTablePK) *FutureUserTableRow {
