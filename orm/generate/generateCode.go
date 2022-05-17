@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/binary"
 	"encoding/json"
+	"fmt"
 	"github.com/apple/foundationdb/bindings/go/src/fdb"
 	"github.com/apple/foundationdb/bindings/go/src/fdb/subspace"
 	"github.com/apple/foundationdb/bindings/go/src/fdb/tuple"
@@ -84,6 +85,28 @@ func (key *KeyUint64) MustKey() []byte {
 	return buf.Bytes()
 }
 
+type Encoder interface {
+	Encode(interface{}) ([]byte, error)
+	Decode([]byte) (interface{}, error)
+}
+
+type JsonEncoder struct{}
+
+func (enc *JsonEncoder) Encode(value interface{}) ([]byte, error) {
+	return json.Marshal(value)
+}
+
+func (enc *JsonEncoder) Decode(value []byte) (interface{}, error) {
+	var res interface{}
+	err := json.Unmarshal(value, res)
+	return res, err
+}
+
+type TableOptions struct {
+	Encoder  Encoder
+	Subspace subspace.Subspace
+}
+
 // Ниже мое представление о том, как будет выглядеть сгенерированный код
 // Это необходимо мне для понимания того что писать)
 // схема GeneratorConfig
@@ -112,8 +135,27 @@ func (key *KeyUint64) MustKey() []byte {
 // }
 
 type UsersTable struct {
-	DB       fdb.Database
+	Encoder  Encoder
 	Subspace subspace.Subspace
+}
+
+func NewUsersTable(opts ...TableOptions) (*UsersTable, error) {
+	table := &UsersTable{}
+	for _, opt := range opts {
+		if opt.Encoder != nil {
+			table.Encoder = opt.Encoder
+		}
+		if opt.Subspace != nil {
+			table.Subspace = opt.Subspace
+		}
+	}
+	if table.Encoder == nil {
+		return nil, fmt.Errorf("encoder is nil")
+	}
+	if table.Subspace == nil {
+		return nil, fmt.Errorf("subspace is nil")
+	}
+	return table, nil
 }
 
 type User struct {
@@ -126,48 +168,41 @@ type UsersTableRow struct {
 	Ts   uint64 `json:"ts"`
 }
 
-func NewUsersTableRow(jsonBytes []byte) (*UsersTableRow, error) {
-	model := &UsersTableRow{}
-	if err := json.Unmarshal(jsonBytes, model); err != nil {
-		return nil, err
-	}
-	return model, nil
+type FutureUserTableRow struct {
+	Encoder Encoder
+	Future  fdb.FutureByteSlice
 }
 
-func MustNewUsersTableRow(jsonBytes []byte) *UsersTableRow {
-	model := &UsersTableRow{}
-	if err := json.Unmarshal(jsonBytes, model); err != nil {
+func (future *FutureUserTableRow) NewUsersTableRow(value []byte) (*UsersTableRow, error) {
+	if row, err := future.Encoder.Decode(value); err != nil {
+		return nil, err
+	} else {
+		return row.(*UsersTableRow), nil
+	}
+}
+
+func (future *FutureUserTableRow) MustNewUsersTableRow(value []byte) *UsersTableRow {
+	row, err := future.NewUsersTableRow(value)
+	if err != nil {
 		panic(err)
 	}
-	return model
-}
-
-type FutureUserTableRow struct {
-	Future fdb.FutureByteSlice
+	return row
 }
 
 func (future *FutureUserTableRow) Get() (*UsersTableRow, error) {
-	valueJson, err := future.Future.Get()
+	value, err := future.Future.Get()
 	if err != nil {
 		return nil, err
 	}
-	return NewUsersTableRow(valueJson)
+	return future.NewUsersTableRow(value)
 }
 
 func (future *FutureUserTableRow) MustGet() *UsersTableRow {
-	return MustNewUsersTableRow(future.Future.MustGet())
-}
-
-func (model *UsersTableRow) ToJson() ([]byte, error) {
-	return json.Marshal(model)
-}
-
-func (model *UsersTableRow) MustToJson() []byte {
-	if value, err := json.Marshal(model); err != nil {
+	value, err := future.Get()
+	if err != nil {
 		panic(err)
-	} else {
-		return value
 	}
+	return value
 }
 
 type UsersTablePK struct {
@@ -215,11 +250,11 @@ func (table *UsersTable) Insert(tr fdb.Transaction, model *UsersTableRow) error 
 		return err
 	}
 
-	valueJson, err := model.ToJson()
+	value, err := table.Encoder.Encode(model)
 	if err != nil {
 		return err
 	}
-	tr.Set(table.Subspace.Sub(key), valueJson)
+	tr.Set(table.Subspace.Sub(key), value)
 	return nil
 }
 
