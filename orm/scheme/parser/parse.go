@@ -1,7 +1,6 @@
 package parser
 
 import (
-	"fmt"
 	"strings"
 
 	"github.com/nostressdev/fdb/orm/scheme"
@@ -37,14 +36,14 @@ func (p *ValuesParser) parseField(value interface{}, fieldType string) (interfac
 			return p.parseModel(value, model)
 		}
 	}
-	return nil, fmt.Errorf("unknown type %s", fieldType)
+	return nil, errors.ParsingError.Newf("unknown type %s", fieldType)
 }
 
 func (p *ValuesParser) parseModel(value interface{}, model scheme.Model) (interface{}, error) {
 	var fieldsMap map[string]interface{}
 	var ok bool
 	if fieldsMap, ok = value.(map[string]interface{}); !ok {
-		return nil, fmt.Errorf("model %s must be a map", model.Name)
+		return nil, errors.ParsingError.Newf("model %s must be a map", model.Name)
 	}
 	modelFieldNames := make(map[string]int)
 	for i, field := range model.Fields {
@@ -52,7 +51,7 @@ func (p *ValuesParser) parseModel(value interface{}, model scheme.Model) (interf
 	}
 	for name, value := range fieldsMap {
 		if _, ok := modelFieldNames[name]; !ok {
-			return nil, fmt.Errorf("model %s: field %s is not defined", model.Name, name)
+			return nil, errors.ParsingError.Newf("model %s: field %s is not defined", model.Name, name)
 		}
 		value, err := p.parseField(value, model.Fields[modelFieldNames[name]].Type)
 		if err != nil {
