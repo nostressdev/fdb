@@ -3,7 +3,7 @@ package yaml
 import (
 	"github.com/nostressdev/fdb/orm/scheme"
 	"github.com/nostressdev/fdb/orm/scheme/parser"
-	"gopkg.in/yaml.v3"
+	"gopkg.in/yaml.v2"
 )
 
 func ParseYAML(text string) (*scheme.GeneratorConfig, error) {
