@@ -27,8 +27,10 @@ tables:
         type: "string"
         default-value: "ivan"
       - name: "age"
-        type: "uint64"
-        default-value: 18
+        type: "@user"
+        default-value:
+          id: "default-id"
+          name: "default-name"
     pk:
       - "id"
     range-indexes: 
