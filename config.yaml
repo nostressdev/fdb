@@ -11,7 +11,7 @@ models:
       - name: "id"
         type: "string"
       - name: "user"
-        type: "user"
+        type: "@user"
         default-value:
           id: ""
           name: ""
@@ -27,8 +27,8 @@ tables:
         type: "string"
         default-value: "ivan"
       - name: "age"
-        type: "int32"
-        default-value: "18"
+        type: "uint64"
+        default-value: 18
     pk:
       - "id"
     range-indexes: 
@@ -38,5 +38,5 @@ tables:
         columns:
           - "id"
           - "name"
-          - "surname"
+          - "age"
         async: false
