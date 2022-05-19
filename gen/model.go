@@ -8,7 +8,7 @@ import (
 func GenerateModel(gFile *protogen.GeneratedFile, model *scheme.Model) {
 	gFile.P("type " + model.Name + " struct {")
 	for _, field := range model.Fields {
-		gFile.P(field.Name + " " + field.Type)
+		gFile.P(" 	" + field.Name + " " + field.Type)
 	}
 	gFile.P("}")
 	gFile.P()
