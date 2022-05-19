@@ -8,13 +8,13 @@ import (
 )
 
 func GenerateTable(gFile *protogen.GeneratedFile, table *scheme.Table, models []*scheme.Model) {
-	generateStructs(gFile, table)
+	generateStructs(gFile, table, models)
 	generateMethods(gFile, table, models)
 }
 
-func generateStructs(gFile *protogen.GeneratedFile, table *scheme.Table) {
+func generateStructs(gFile *protogen.GeneratedFile, table *scheme.Table, models []*scheme.Model) {
 	generateTableStruct(gFile, table)
-	generateTablePKStruct(gFile, table)
+	generateTablePKStruct(gFile, table, models)
 	generateTableRowStruct(gFile, table)
 	generateFutureTableRowStruct(gFile, table)
 }
@@ -46,10 +46,14 @@ func generateTableStruct(gFile *protogen.GeneratedFile, table *scheme.Table) {
 	gFile.P()
 }
 
-func generateTablePKStruct(gFile *protogen.GeneratedFile, table *scheme.Table) {
+func generateTablePKStruct(gFile *protogen.GeneratedFile, table *scheme.Table, models []*scheme.Model) {
 	gFile.P("type " + table.Name + "TablePK struct {")
 	for _, column := range table.PK {
-		gFile.P("		" + strings.Join(strings.Split(column, "."), "") + " lib.Key")
+		tp, err := getType(table, models, column)
+		if err != nil {
+			panic(err)
+		}
+		gFile.P("		" + strings.Join(strings.Split(column, "."), "") + " " + tp)
 	}
 	gFile.P("	}")
 	gFile.P()
@@ -74,7 +78,7 @@ func generateFutureTableRowStruct(gFile *protogen.GeneratedFile, table *scheme.T
 
 func generateMethods(gFile *protogen.GeneratedFile, table *scheme.Table, models []*scheme.Model) {
 	generateTableMethods(gFile, table, models)
-	generateTablePKMethods(gFile, table)
+	generateTablePKMethods(gFile, table, models)
 	generateFutureTableRowMethods(gFile, table)
 }
 
@@ -102,11 +106,7 @@ func generateTableMethods(gFile *protogen.GeneratedFile, table *scheme.Table, mo
 	gFile.P("func (table *" + table.Name + "Table) Insert(tr fdb.Transaction, model *" + table.Name + "TableRow) error {")
 	gFile.P("	pk := &" + table.Name + "TablePK{")
 	for _, column := range table.PK {
-		tp, err := getType(table, models, column)
-		if err != nil {
-			panic(err)
-		}
-		gFile.P("		" + strings.Join(strings.Split(column, "."), "") + ": &lib.Key" + strings.Title(tp) + "{Value: model." + column + "},")
+		gFile.P("		" + strings.Join(strings.Split(column, "."), "") + ": model." + column + ",")
 	}
 	gFile.P("	}")
 	gFile.P("	key, err := pk.Pack()")
@@ -178,16 +178,48 @@ func getType(table *scheme.Table, models []*scheme.Model, q string) (string, err
 	return "", fmt.Errorf("don't find \"%s\" from \"%s\" in table columns", qSlice[0], q)
 }
 
-func generateTablePKMethods(gFile *protogen.GeneratedFile, table *scheme.Table) {
+func generateTablePKMethods(gFile *protogen.GeneratedFile, table *scheme.Table, models []*scheme.Model) {
 	gFile.P("func (pk *" + table.Name + "TablePK) Pack() ([]tuple.TupleElement, error) {")
+	gFile.P("	var err error")
 	elements := make([]string, 0, len(table.PK))
 	for _, column := range table.PK {
-		gFile.P("	pk" + strings.Join(strings.Split(column, "."), "") + "Bytes, err := pk." + strings.Join(strings.Split(column, "."), "") + ".Key()")
-		gFile.P("	if err != nil {")
-		gFile.P("		return nil, err")
-		gFile.P("	}")
-		elements = append(elements, "pk"+strings.Join(strings.Split(column, "."), "")+"Bytes")
+		name := strings.Join(strings.Split(column, "."), "")
+		tp, err := getType(table, models, column)
+		if err != nil {
+			panic(err)
+		}
+		switch tp {
+		case "string":
+			gFile.P("	pk" + name + "Bytes := []byte(pk." + name + ")")
+		case "uint64":
+			gFile.P("	" + name + "Buf := new(bytes.Buffer)")
+			gFile.P("	err = binary.Write(" + name + "Buf, binary.BigEndian, pk." + name + ")")
+			gFile.P("	if err != nil {")
+			gFile.P("		return nil, err")
+			gFile.P("	}")
+			gFile.P("	pk" + name + "Bytes := " + name + "Buf.Bytes()")
+		case "int64":
+			gFile.P("	" + name + "Buf := new(bytes.Buffer)")
+			gFile.P("	err = binary.Write(" + name + "Buf, binary.BigEndian, " + name + ")")
+			gFile.P("	if err != nil {")
+			gFile.P("		return nil, err")
+			gFile.P("	}")
+			gFile.P("	pk" + name + "Bytes := " + name + "Buf.Bytes()")
+		case "float32":
+			gFile.P("	" + name + "Buf := new(bytes.Buffer)")
+			gFile.P("	err = binary.Write(" + name + "Buf, binary.BigEndian, " + name + ")")
+			gFile.P("	if err != nil {")
+			gFile.P("		return nil, err")
+			gFile.P("	}")
+			gFile.P("	pk" + name + "Bytes := " + name + "Buf.Bytes()")
+		default:
+			panic("unknown type " + tp)
+		}
+		elements = append(elements, "pk"+name+"Bytes")
 	}
+	gFile.P("	if err != nil {")
+	gFile.P("		return nil, err")
+	gFile.P("	}")
 	gFile.P("	return []tuple.TupleElement{" + strings.Join(elements, ", ") + "}, nil")
 	gFile.P("}")
 	gFile.P()

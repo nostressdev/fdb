@@ -17,6 +17,8 @@ func GenTable(gFile *protogen.GeneratedFile, config *scheme.GeneratorConfig, ind
 	gFile.P("package " + config.PackageName)
 	gFile.P()
 	gFile.P("import (")
+	gFile.P("	\"bytes\"")
+	gFile.P("	\"encoding/binary\"")
 	gFile.P("	\"fmt\"")
 	gFile.P("	\"github.com/apple/foundationdb/bindings/go/src/fdb\"")
 	gFile.P("	\"github.com/apple/foundationdb/bindings/go/src/fdb/subspace\"")
