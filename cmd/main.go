@@ -10,6 +10,8 @@ import (
 
 func main() {
 	config := &scheme.GeneratorConfig{}
+	config.FilesPath = "generated/"
+	config.PackageName = "gen"
 	config.Models = []*scheme.Model{{
 		Name: "User",
 		Fields: []scheme.Field{
@@ -47,12 +49,12 @@ func main() {
 	//	return nil
 	//})
 
-	err := os.RemoveAll("generated")
+	err := os.RemoveAll(config.FilesPath)
 	if err != nil {
 		panic(err)
 	}
 
-	err = os.Mkdir("generated", 7770)
+	err = os.Mkdir(config.FilesPath, 7770)
 	if err != nil {
 		panic(err)
 	}
@@ -67,7 +69,7 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	f, err := os.Create("generated/models.g.go")
+	f, err := os.Create(config.FilesPath + "Models.g.go")
 	if err != nil {
 		panic(err)
 	}
@@ -90,7 +92,7 @@ func main() {
 		if err != nil {
 			panic(err)
 		}
-		f, err = os.Create("generated/" + table.Name + "Table.g.go")
+		f, err = os.Create(config.FilesPath + table.Name + "Table.g.go")
 		if err != nil {
 			panic(err)
 		}

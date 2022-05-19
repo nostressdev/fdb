@@ -1,8 +1,10 @@
 package scheme
 
 type GeneratorConfig struct {
-	Models []*Model
-	Tables []*Table
+	Models      []*Model
+	Tables      []*Table
+	FilesPath   string
+	PackageName string
 }
 
 type Model struct {
