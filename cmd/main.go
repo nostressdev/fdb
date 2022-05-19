@@ -3,6 +3,7 @@ package main
 import (
 	"github.com/nostressdev/fdb/gen"
 	"github.com/nostressdev/fdb/orm/scheme"
+	"go/format"
 	"google.golang.org/protobuf/compiler/protogen"
 	"os"
 )
@@ -42,6 +43,10 @@ func main() {
 	gFile := &protogen.GeneratedFile{}
 	gen.GenerateCode(gFile, config)
 	c, err := gFile.Content()
+	if err != nil {
+		panic(err)
+	}
+	c, err = format.Source(c)
 	if err != nil {
 		panic(err)
 	}
