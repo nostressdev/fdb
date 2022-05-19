@@ -23,11 +23,18 @@ func main() {
 			},
 		},
 	}}
-	config.Tables = []*scheme.Table{{
-		Name:    "Users",
-		Columns: []scheme.Column{{Name: "Man", Type: "User"}, {Name: "Ts", Type: "uint64"}},
-		PK:      []string{"Ts", "Man.ID"},
-	}}
+	config.Tables = []*scheme.Table{
+		{
+			Name:    "Users",
+			Columns: []scheme.Column{{Name: "Man", Type: "User"}, {Name: "Ts", Type: "uint64"}},
+			PK:      []string{"Ts", "Man.ID"},
+		},
+		{
+			Name:    "AgeSort",
+			Columns: []scheme.Column{{Name: "Man", Type: "User"}},
+			PK:      []string{"Man.Age", "Man.ID"},
+		},
+	}
 
 	//protogen.Options{}.Run(func(gen *protogen.Plugin) error {
 	//	fmt.Println(0)
@@ -40,8 +47,18 @@ func main() {
 	//	return nil
 	//})
 
+	err := os.RemoveAll("generated")
+	if err != nil {
+		panic(err)
+	}
+
+	err = os.Mkdir("generated", 7770)
+	if err != nil {
+		panic(err)
+	}
+
 	gFile := &protogen.GeneratedFile{}
-	gen.GenerateCode(gFile, config)
+	gen.GenModels(gFile, config)
 	c, err := gFile.Content()
 	if err != nil {
 		panic(err)
@@ -50,7 +67,7 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	f, err := os.Create("genFile.go")
+	f, err := os.Create("generated/models.g.go")
 	if err != nil {
 		panic(err)
 	}
@@ -61,5 +78,29 @@ func main() {
 	err = f.Close()
 	if err != nil {
 		panic(err)
+	}
+	for i, table := range config.Tables {
+		gFile = &protogen.GeneratedFile{}
+		gen.GenTable(gFile, config, i)
+		c, err = gFile.Content()
+		if err != nil {
+			panic(err)
+		}
+		c, err = format.Source(c)
+		if err != nil {
+			panic(err)
+		}
+		f, err = os.Create("generated/" + table.Name + "Table.g.go")
+		if err != nil {
+			panic(err)
+		}
+		_, err = f.Write(c)
+		if err != nil {
+			panic(err)
+		}
+		err = f.Close()
+		if err != nil {
+			panic(err)
+		}
 	}
 }
