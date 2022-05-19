@@ -106,7 +106,7 @@ func generateTableMethods(gFile *protogen.GeneratedFile, table *scheme.Table, mo
 		if err != nil {
 			panic(err)
 		}
-		gFile.P("		" + strings.Join(strings.Split(column, "."), "") + ": &lib.Key" + UcFirst(tp) + "{Value: model." + column + "},")
+		gFile.P("		" + strings.Join(strings.Split(column, "."), "") + ": &lib.Key" + strings.Title(tp) + "{Value: model." + column + "},")
 	}
 	gFile.P("	}")
 	gFile.P("	key, err := pk.Pack()")
