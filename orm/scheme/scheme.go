@@ -1,13 +1,13 @@
 package scheme
 
 type GeneratorConfig struct {
-	Models []Model
-	Tables []Table
+	Models []*Model
+	Tables []*Table
 }
 
 type Model struct {
 	Name          string
-	Fields        map[string]Field
+	Fields        []Field
 	ExternalModel string // продумать как хранить инфу о протобафе, может что то дополнительное
 }
 
@@ -21,7 +21,7 @@ type Table struct {
 	Name         string
 	StoragePath  string
 	RangeIndexes []RangeIndex
-	Columns      map[string]Column
+	Columns      []Column
 	PK           []string // column names
 }
 
