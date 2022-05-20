@@ -89,7 +89,7 @@ func (p *ValuesParser) ParseValues(config *scheme.GeneratorConfig) (err error) {
 	}()
 	p.parseModels(config.Models)
 	p.parseTables(config.Tables)
-	return err
+	return
 }
 
 func NewValuesParser(models []scheme.Model) (*ValuesParser, error) {
