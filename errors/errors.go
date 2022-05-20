@@ -12,6 +12,7 @@ const (
 	NoType = ErrorType(iota)
 	ValidationError
 	ParsingError
+	InternalError
 )
 
 type customError struct {
@@ -20,7 +21,16 @@ type customError struct {
 }
 
 func (err *customError) Error() string {
-	return err.originalError.Error()
+	switch err.errorType {
+	case ValidationError:
+		return "validation error: " + err.originalError.Error()
+	case ParsingError:
+		return "parsing error: " + err.originalError.Error()
+	case InternalError:
+		return "internal error: " + err.originalError.Error() + " (please report this error)"
+	default:
+		return err.originalError.Error()
+	}
 }
 
 func (errType ErrorType) New(msg string) error {
