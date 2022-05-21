@@ -54,7 +54,7 @@ func main() {
 		panic(err)
 	}
 
-	err = os.Mkdir(config.FilesPath, 7770)
+	err = os.Mkdir(config.FilesPath, os.ModePerm)
 	if err != nil {
 		panic(err)
 	}
