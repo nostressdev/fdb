@@ -170,10 +170,10 @@ func getType(table *scheme.Table, models []*scheme.Model, q string) (string, err
 							return field.Type, nil
 						}
 					}
-					return "", fmt.Errorf("don't find \"%s\" from \"%s\" in model \"%s\"", qSlice[1], q, model.Name)
+					return "", fmt.Errorf("don't find field \"%s\" from \"%s\" in model \"%s\"", qSlice[1], q, model.Name)
 				}
 			}
-			return "", fmt.Errorf("don't find type \"%s\" of column \"%s\" from \"%s\"", column.Type, column.Name, q)
+			return "", fmt.Errorf("don't find model \"%s\" as type of column \"%s\" from \"%s\"", column.Type, column.Name, q)
 		}
 	}
 	return "", fmt.Errorf("don't find \"%s\" from \"%s\" in table columns", qSlice[0], q)
