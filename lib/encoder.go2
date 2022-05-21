@@ -2,19 +2,19 @@ package lib
 
 import "encoding/json"
 
-type Encoder interface {
+type Encoder[T any] interface {
 	Encode(interface{}) ([]byte, error)
-	Decode([]byte) (interface{}, error)
+	Decode[T any]([]byte) (interface{}, error)
 }
 
-type JsonEncoder struct{}
+type JsonEncoder[T any] struct{}
 
 func (enc *JsonEncoder) Encode(value interface{}) ([]byte, error) {
 	return json.Marshal(value)
 }
 
-func (enc *JsonEncoder) Decode(value []byte) (interface{}, error) {
-	var res interface{}
+func (enc *JsonEncoder) Decode[T any](value []byte) (interface{}, error) {
+	res := &T{}
 	err := json.Unmarshal(value, res)
 	return res, err
 }

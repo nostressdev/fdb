@@ -1,0 +1,10 @@
+package tests
+
+import (
+	"github.com/apple/foundationdb/bindings/go/src/fdb/subspace"
+	"github.com/nostressdev/fdb/lib"
+	gen_fdb "github.com/nostressdev/fdb/tests/generated"
+)
+
+var userJsonEncoder = &lib.JsonEncoder[gen_fdb.UsersTableRow]{}
+var to = lib.TableOptions{Enc: userJsonEncoder, Sub: subspace.Sub("tests")}

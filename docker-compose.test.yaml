@@ -2,7 +2,7 @@ version: "3.3"
 services:
 
   fdb:
-    image: foundationdb/foundationdb:6.0.18
+    image: foundationdb/foundationdb:6.3.22
     environment:
       FDB_COORDINATOR: fdb
       FDB_NETWORKING_MODE: container

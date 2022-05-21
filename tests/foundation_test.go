@@ -3,15 +3,13 @@ package tests
 import (
 	"fmt"
 	"github.com/apple/foundationdb/bindings/go/src/fdb"
-	"github.com/apple/foundationdb/bindings/go/src/fdb/subspace"
-	"github.com/nostressdev/fdb/lib"
 	gen_fdb "github.com/nostressdev/fdb/tests/generated"
 	"log"
 	"testing"
 )
 
 func Test_CreateTable(t *testing.T) {
-	table, err := gen_fdb.NewUsersTable(lib.TableOptions{Enc: &lib.JsonEncoder{}, Sub: subspace.Sub("tests")})
+	table, err := gen_fdb.NewUsersTable(to)
 	AssertError(t, err)
 	row := &gen_fdb.UsersTableRow{Man: gen_fdb.User{ID: "id", Age: 57}, Ts: 123}
 	fdb.MustAPIVersion(600)

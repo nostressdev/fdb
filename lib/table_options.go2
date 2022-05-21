@@ -2,7 +2,7 @@ package lib
 
 import "github.com/apple/foundationdb/bindings/go/src/fdb/subspace"
 
-type TableOptions struct {
-	Enc Encoder
+type TableOptions[T any] struct {
+	Enc Encoder[T]
 	Sub subspace.Subspace
 }
