@@ -1,0 +1,21 @@
+version: "3.3"
+services:
+
+  fdb:
+    image: foundationdb/foundationdb:6.0.18
+    environment:
+      FDB_COORDINATOR: fdb
+      FDB_NETWORKING_MODE: container
+
+  fdb-service:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+    depends_on:
+      - fdb
+    environment:
+      - PORT=80
+      - HOST=0.0.0.0
+      - FDB_COORDINATOR=fdb
+      - NATS=nats:4222
+    command: bash -c "./docker/docker-entrypoint.test.sh"

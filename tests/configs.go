@@ -4,7 +4,7 @@ import "github.com/nostressdev/fdb/orm/scheme"
 
 var Config = &scheme.GeneratorConfig{
 	FilesPath:   "generated/",
-	PackageName: "gen",
+	PackageName: "gen_fdb",
 	Models: []*scheme.Model{{
 		Name: "User",
 		Fields: []scheme.Field{
