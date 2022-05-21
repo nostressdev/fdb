@@ -10,11 +10,12 @@ import (
 
 func FuzzParseYaml(f *testing.F) {
 	f.Fuzz(func(t *testing.T, orig string) {
-		parser, err := parser.NewParser()
-		if err != nil {
-			t.Fatal(err)
+		parser := parser.NewParser()
+		err := parser.AddYAMLReader(strings.NewReader(orig))
+		if err != nil && errors.GetType(err) != errors.NoType {
+			t.Errorf("ParseYAML(%q) = %v", orig, err)
 		}
-		err = parser.AddYAMLReader(strings.NewReader(orig))
+		_, err = parser.GetConfig()
 		if err != nil && errors.GetType(err) != errors.NoType {
 			t.Errorf("ParseYAML(%q) = %v", orig, err)
 		}

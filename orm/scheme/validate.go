@@ -2,6 +2,17 @@ package scheme
 
 import "github.com/nostressdev/fdb/errors"
 
+var primitives = map[string]struct{}{
+	"int32":  {},
+	"int64":  {},
+	"uint32": {},
+	"uint64": {},
+	"string": {},
+	"bool":   {},
+	"float":  {},
+	"double": {},
+}
+
 func (model *Model) validate() {
 	if model.ExternalModel != "" {
 		// TODO: validate external model
@@ -101,6 +112,37 @@ func (c *GeneratorConfig) validateTables() {
 	}
 }
 
+func (c *GeneratorConfig) checkCycles() {
+	names := make(map[string]*Model)
+	for _, model := range c.Models {
+		names[model.Name] = &model
+	}
+	used := make(map[*Model]int)
+	stack := make([]*Model, 0)
+	for _, model := range c.Models {
+		if _, ok := used[&model]; !ok {
+			stack = append(stack, &model)
+			for len(stack) > 0 {
+				model := stack[len(stack)-1]
+				stack = stack[:len(stack)-1]
+				used[model] = 1
+				for _, field := range model.Fields {
+					if _, ok := primitives[field.Type]; !ok {
+						if nextModel, ok := names[field.Type[1:]]; !ok {
+							panic(errors.ValidationError.Newf("model %s: field %s: type %s is not defined", nextModel.Name, field.Name, field.Type))
+						} else if value := used[nextModel]; value == 1 {
+							panic(errors.ValidationError.Newf("model %s: field %s: type %s is cyclic", model.Name, field.Name, field.Type))
+						} else if value != 2 {
+							stack = append(stack, nextModel)
+						}
+					}
+				}
+				used[model] = 2
+			}
+		}
+	}
+}
+
 func (c *GeneratorConfig) Validate() (err error) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -113,5 +155,6 @@ func (c *GeneratorConfig) Validate() (err error) {
 	}()
 	c.validateModels()
 	c.validateTables()
+	c.checkCycles()
 	return
 }

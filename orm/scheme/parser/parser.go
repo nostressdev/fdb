@@ -157,17 +157,17 @@ func (p *Parser) GetConfig() (*scheme.GeneratorConfig, error) {
 		models = append(models, config.Models...)
 		tables = append(tables, config.Tables...)
 	}
-	return &scheme.GeneratorConfig{
-		Models:  models,
-		Tables:  tables,
-	}, nil
+	config := &scheme.GeneratorConfig{
+		Models: models,
+		Tables: tables,
+	}
+	return config, config.Validate()
 }
 
-
-func NewParser() (*Parser, error) {
+func NewParser() *Parser {
 	parser := &Parser{
 		Models:  make(map[string]scheme.Model),
 		Configs: []*scheme.GeneratorConfig{},
 	}
-	return parser, nil
+	return parser
 }
