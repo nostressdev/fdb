@@ -83,8 +83,8 @@ func TestParseYAMLWithErrors(t *testing.T) {
 		filename string
 	}{
 		{
-			name:     "infinite loop test",
-			filename: "../../../test/infinite-loop.yaml",
+			name:     "models loop test",
+			filename: "../../../test/models-loop.yaml",
 		},
 	}
 	for _, tt := range tests {
