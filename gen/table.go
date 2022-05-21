@@ -227,30 +227,36 @@ func generateTablePKMethods(gFile *protogen.GeneratedFile, table *scheme.Table, 
 }
 
 func generateFutureTableRowMethods(gFile *protogen.GeneratedFile, table *scheme.Table) {
-	gFile.P("func (future *Future" + table.Name + "TableRow) new" + table.Name + "TableRow(value []byte) (*" + table.Name + "TableRow, error) {")
-	gFile.P("	if row, err := future.Enc.Decode(value); err != nil {")
-	gFile.P("		return nil, err")
-	gFile.P("	} else {")
-	gFile.P("		return row.(*" + table.Name + "TableRow), nil")
-	gFile.P("	}")
-	gFile.P("}")
+	funcNewTableRowString :=
+		`func (future *Future%sTableRow) new%sTableRow(value []byte) (*%sTableRow, error) {
+			if row, err := future.Enc.Decode(value); err != nil {
+				return nil, err
+			} else {
+				return row.(*%sTableRow), nil
+			}
+		}`
+	gFile.P(fmt.Sprintf(funcNewTableRowString, table.Name, table.Name, table.Name, table.Name))
 	gFile.P()
 
-	gFile.P("func (future *Future" + table.Name + "TableRow) Get() (*" + table.Name + "TableRow, error) {")
-	gFile.P("	value, err := future.Future.Get()")
-	gFile.P("	if err != nil {")
-	gFile.P("		return nil, err")
-	gFile.P("	}")
-	gFile.P("	return future.new" + table.Name + "TableRow(value)")
-	gFile.P("}")
+	funcGetString :=
+		`func (future *Future%sTableRow) Get() (*%sTableRow, error) {
+		value, err := future.Future.Get()
+		if err != nil {
+			return nil, err
+		}
+		return future.new%sTableRow(value)
+	}`
+	gFile.P(fmt.Sprintf(funcGetString, table.Name, table.Name, table.Name))
 	gFile.P()
 
-	gFile.P("func (future *Future" + table.Name + "TableRow) MustGet() *" + table.Name + "TableRow {")
-	gFile.P("	value, err := future.Get()")
-	gFile.P("	if err != nil {")
-	gFile.P("		panic(err)")
-	gFile.P("	}")
-	gFile.P("	return value")
-	gFile.P("}")
+	funcMustGetString :=
+		`func (future *Future%sTableRow) MustGet() *%sTableRow {
+		value, err := future.Get()
+		if err != nil {
+			panic(err)
+		}
+		return value
+	}`
+	gFile.P(fmt.Sprintf(funcMustGetString, table.Name, table.Name))
 	gFile.P()
 }
