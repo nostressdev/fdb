@@ -159,12 +159,13 @@ func getType(table *scheme.Table, models []*scheme.Model, q string) (string, err
 		}
 		return "", fmt.Errorf("don't find \"%s\" in table columns", q)
 	}
-	qSlice := strings.Split(q, ".")
-	for _, column := range table.Columns {
+
+	qSlice := strings.Split(q, ".")        //делаем сплит
+	for _, column := range table.Columns { // ищем колонку по названию
 		if column.Name == qSlice[0] {
-			for _, model := range models {
+			for _, model := range models { // ищем модель которая имеет название как наш тип
 				if column.Type == model.Name {
-					for _, field := range model.Fields {
+					for _, field := range model.Fields { // ищем поле
 						if field.Name == qSlice[1] {
 							return field.Type, nil
 						}
