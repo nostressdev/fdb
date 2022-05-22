@@ -11,35 +11,36 @@ import (
 )
 
 type Parser struct {
-	Models  map[string]*scheme.Model
-	Configs []*scheme.GeneratorConfig
+	Models   map[string]*scheme.Model
+	Decoders []decoder
+	Configs  []*scheme.GeneratorConfig
 }
 
 type decoder interface {
 	Decode(v interface{}) error
 }
 
-func (p *Parser) addDecoder(d decoder) error {
-	config := &scheme.GeneratorConfig{}
-	err := d.Decode(config)
-	if err != nil {
-		return errors.ParsingError.Wrap(err, "failed to decode config")
-	}
-	p.Configs = append(p.Configs, config)
-	return nil
+func (p *Parser) addDecoder(d decoder) {
+	p.Decoders = append(p.Decoders, d)
 }
 
-func (p *Parser) AddJSON(reader io.Reader) error {
-	return p.addDecoder(json.NewDecoder(reader))
+func (p *Parser) AddJSON(reader io.Reader) {
+	p.addDecoder(json.NewDecoder(reader))
 }
 
-func (p *Parser) AddYAML(reader io.Reader) error {
-	return p.addDecoder(yaml.NewDecoder(reader))
+func (p *Parser) AddYAML(reader io.Reader) {
+	p.addDecoder(yaml.NewDecoder(reader))
 }
 
 func (p *Parser) init() {
 	modelsSet := make(map[string]bool)
-	for _, config := range p.Configs {
+	for _, decoder := range p.Decoders {
+		config := &scheme.GeneratorConfig{}
+		err := decoder.Decode(config)
+		if err != nil {
+			panic(err)
+		}
+		p.Configs = append(p.Configs, config)
 		for i := range config.Models {
 			model := config.Models[i]
 			if modelsSet[model.Name] {

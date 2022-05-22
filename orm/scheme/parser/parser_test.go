@@ -100,10 +100,7 @@ func TestParseYAML(t *testing.T) {
 				t.Fatalf("unable to read file %s: %v", tt.filename, err)
 			}
 			parser := New()
-			err = parser.AddYAML(strings.NewReader(string(text)))
-			if err != nil {
-				t.Fatalf("unable to parse file %s: %v", tt.filename, err)
-			}
+			parser.AddYAML(strings.NewReader(string(text)))
 			got, err := parser.Parse()
 			if err != nil {
 				t.Fatalf("Parse() error = %v", err)
@@ -114,7 +111,6 @@ func TestParseYAML(t *testing.T) {
 		})
 	}
 }
-
 
 func TestParseYAMLWithErrors(t *testing.T) {
 	tests := []struct {
@@ -133,10 +129,7 @@ func TestParseYAMLWithErrors(t *testing.T) {
 				t.Fatalf("unable to read file %s: %v", tt.filename, err)
 			}
 			parser := New()
-			err = parser.AddYAML(strings.NewReader(string(text)))
-			if err != nil {
-				t.Fatalf("unable to parse file %s: %v", tt.filename, err)
-			}
+			parser.AddYAML(strings.NewReader(string(text)))
 			_, err = parser.Parse()
 			if err == nil && fdbErrors.GetType(err) == fdbErrors.ValidationError {
 				t.Fatal("GetConfig() must return validation error")
