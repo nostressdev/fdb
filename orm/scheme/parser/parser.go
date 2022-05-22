@@ -38,7 +38,7 @@ func (p *Parser) init() []*scheme.GeneratorConfig {
 		config := &scheme.GeneratorConfig{}
 		err := decoder.Decode(config)
 		if err != nil {
-			panic(err)
+			panic(errors.ParsingError.Wrap(err, "parsing config"))
 		}
 		configs = append(configs, config)
 		for i := range config.Models {
@@ -145,7 +145,11 @@ func (p *Parser) Parse() (config *scheme.GeneratorConfig, err error) {
 	defer func() {
 		if r := recover(); r != nil {
 			if e, ok := r.(error); ok {
-				err = e
+				if errors.GetType(e) == errors.NoType {
+					err = errors.InternalError.New(e.Error())
+				} else {
+					err = e
+				}
 			} else {
 				err = errors.InternalError.Newf("%v", r)
 			}
