@@ -22,6 +22,7 @@ type Table struct {
 	RangeIndexes []*RangeIndex `yaml:"range-indexes"`
 	Columns      []*Column     `yaml:"columns"`
 	PK           []string      `yaml:"pk"`
+	ColumnsSet   map[string]bool
 }
 
 type Column struct {

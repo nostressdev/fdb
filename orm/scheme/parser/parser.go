@@ -163,6 +163,7 @@ func FillValues(config *scheme.GeneratorConfig) *scheme.GeneratorConfig {
 	for _, table := range config.Tables {
 		for _, column := range table.Columns {
 			column.Table = table
+			table.ColumnsSet[column.Name] = true
 		}
 		for _, index := range table.RangeIndexes {
 			index.Table = table
