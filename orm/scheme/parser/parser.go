@@ -7,11 +7,11 @@ import (
 
 	"github.com/nostressdev/fdb/errors"
 	"github.com/nostressdev/fdb/orm/scheme"
-	"gopkg.in/yaml.v2"
+	"gopkg.in/yaml.v3"
 )
 
 type Parser struct {
-	Models  map[string]scheme.Model
+	Models  map[string]*scheme.Model
 	Configs []*scheme.GeneratorConfig
 }
 
@@ -23,30 +23,18 @@ func (p *Parser) AddDecoder(decoder Decoder) error {
 	config := &scheme.GeneratorConfig{}
 	err := decoder.Decode(config)
 	if err != nil {
-		return err
+		return errors.ParsingError.Wrap(err, "failed to decode config")
 	}
 	p.Configs = append(p.Configs, config)
 	return nil
 }
 
-func (p *Parser) AddJSONReader(reader io.Reader) error {
-	config := &scheme.GeneratorConfig{}
-	err := json.NewDecoder(reader).Decode(config)
-	if err != nil {
-		return err
-	}
-	p.Configs = append(p.Configs, config)
-	return nil
+func (p *Parser) AddJSON(reader io.Reader) error {
+	return p.AddDecoder(json.NewDecoder(reader))
 }
 
-func (p *Parser) AddYAMLReader(reader io.Reader) error {
-	config := &scheme.GeneratorConfig{}
-	err := yaml.NewDecoder(reader).Decode(config)
-	if err != nil {
-		return err
-	}
-	p.Configs = append(p.Configs, config)
-	return nil
+func (p *Parser) AddYAML(reader io.Reader) error {
+	return p.AddDecoder(yaml.NewDecoder(reader))
 }
 
 func (p *Parser) init() {
@@ -56,7 +44,7 @@ func (p *Parser) init() {
 			if _, ok := modelsSet[model.Name]; ok {
 				panic(errors.ParsingError.Newf("model %s: duplicated model name", model.Name))
 			}
-			p.Models[model.Name] = model
+			p.Models[model.Name] = &model
 			modelsSet[model.Name] = struct{}{}
 		}
 	}
@@ -84,20 +72,16 @@ func (p *Parser) parseField(value interface{}, fieldType string) interface{} {
 	case "double":
 		return value.(float64)
 	}
-	if strings.HasPrefix(fieldType, "@") {
-		typeName := fieldType[1:]
-		if model, ok := p.Models[typeName]; ok {
-			if newValue, ok := value.(map[string]interface{}); ok {
-				return p.parseModel(newValue, model)
-			}
-			panic(errors.ParsingError.Newf("model %s: field %s is not a map", typeName, value))
+	if model, ok := p.Models[fieldType[1:]]; ok && strings.HasPrefix(fieldType, "@") {
+		if newValue, ok := value.(map[string]interface{}); ok {
+			return p.parseModel(newValue, model)
 		}
+		panic(errors.ParsingError.Newf("model %s: field %s is not a map", fieldType, value))
 	}
 	panic(errors.ParsingError.Newf("unknown type %s", fieldType))
 }
 
-func (p *Parser) parseModel(value map[string]interface{}, model scheme.Model) map[string]interface{} {
-	fieldsMap := value
+func (p *Parser) parseModel(fieldsMap map[string]interface{}, model *scheme.Model) map[string]interface{} {
 	modelFieldNames := make(map[string]int)
 	for i, field := range model.Fields {
 		modelFieldNames[field.Name] = i
@@ -128,7 +112,12 @@ func (p *Parser) parseTables(tables []scheme.Table) {
 	}
 }
 
-func (p *Parser) parseValues(config *scheme.GeneratorConfig) (err error) {
+func (p *Parser) parseValues(config *scheme.GeneratorConfig) {
+	p.parseModels(config.Models)
+	p.parseTables(config.Tables)
+}
+
+func (p *Parser) Parse() (config *scheme.GeneratorConfig, err error) {
 	defer func() {
 		if r := recover(); r != nil {
 			if e, ok := r.(error); ok {
@@ -138,35 +127,24 @@ func (p *Parser) parseValues(config *scheme.GeneratorConfig) (err error) {
 			}
 		}
 	}()
-	p.parseModels(config.Models)
-	p.parseTables(config.Tables)
-	return
-}
-
-func (p *Parser) GetConfig() (*scheme.GeneratorConfig, error) {
 	p.init()
-	for _, config := range p.Configs {
-		err := p.parseValues(config)
-		if err != nil {
-			return nil, err
-		}
-	}
 	models := make([]scheme.Model, 0)
 	tables := make([]scheme.Table, 0)
 	for _, config := range p.Configs {
+		p.parseValues(config)
 		models = append(models, config.Models...)
 		tables = append(tables, config.Tables...)
 	}
-	config := &scheme.GeneratorConfig{
+	config = &scheme.GeneratorConfig{
 		Models: models,
 		Tables: tables,
 	}
 	return config, config.Validate()
 }
 
-func NewParser() *Parser {
+func New() *Parser {
 	parser := &Parser{
-		Models:  make(map[string]scheme.Model),
+		Models:  make(map[string]*scheme.Model),
 		Configs: []*scheme.GeneratorConfig{},
 	}
 	return parser

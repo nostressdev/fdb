@@ -61,12 +61,12 @@ func TestParseYAML(t *testing.T) {
 			if err != nil {
 				t.Fatalf("unable to read file %s: %v", tt.filename, err)
 			}
-			parser := NewParser()
-			err = parser.AddYAMLReader(strings.NewReader(string(text)))
+			parser := New()
+			err = parser.AddYAML(strings.NewReader(string(text)))
 			if err != nil {
 				t.Fatalf("unable to parse file %s: %v", tt.filename, err)
 			}
-			got, err := parser.GetConfig()
+			got, err := parser.Parse()
 			if err != nil {
 				t.Fatalf("GetConfig() error = %v", err)
 			}
@@ -93,12 +93,12 @@ func TestParseYAMLWithErrors(t *testing.T) {
 			if err != nil {
 				t.Fatalf("unable to read file %s: %v", tt.filename, err)
 			}
-			parser := NewParser()
-			err = parser.AddYAMLReader(strings.NewReader(string(text)))
+			parser := New()
+			err = parser.AddYAML(strings.NewReader(string(text)))
 			if err != nil {
 				t.Fatalf("unable to parse file %s: %v", tt.filename, err)
 			}
-			_, err = parser.GetConfig()
+			_, err = parser.Parse()
 			if err == nil {
 				t.Fatal("GetConfig() must return error")
 			}
