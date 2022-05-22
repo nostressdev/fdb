@@ -57,7 +57,7 @@ func TestParseYAML(t *testing.T) {
 			}),
 		},
 		{
-			name:     "integer limits test",
+			name:     "integer limits yaml test",
 			filename: "../../../test/integer-limits.yaml",
 			want: FillValues(&scheme.GeneratorConfig{
 				Models: []*scheme.Model{
@@ -71,6 +71,25 @@ func TestParseYAML(t *testing.T) {
 						},
 					},
 				},
+				Tables: []*scheme.Table{},
+			}),
+		},
+		{
+			name:     "integer limits json test",
+			filename: "../../../test/integer-limits.json",
+			want: FillValues(&scheme.GeneratorConfig{
+				Models: []*scheme.Model{
+					{
+						Name: "a",
+						Fields: []*scheme.Field{
+							{Name: "int64", Type: "int64", DefaultValue: int64(9223372036854775807)},
+							{Name: "uint64", Type: "uint64", DefaultValue: uint64(18446744073709551615)},
+							{Name: "int32", Type: "int32", DefaultValue: int32(2147483647)},
+							{Name: "uint32", Type: "uint32", DefaultValue: uint32(4294967295)},
+						},
+					},
+				},
+				Tables: []*scheme.Table{},
 			}),
 		},
 	}

@@ -82,8 +82,14 @@ func (p *Parser) parseField(value interface{}, fieldType string) interface{} {
 		return value.(float64)
 	}
 	if model, ok := p.Models[fieldType[1:]]; ok && strings.HasPrefix(fieldType, "@") {
-		if newValue, ok := value.(map[string]interface{}); ok {
-			return p.parseModelValues(newValue, model)
+		if structMap, ok := value.(map[string]interface{}); ok {
+			return p.parseModelValues(structMap, model)
+		} else if structInterfaceMap, ok := value.(map[interface{}]interface{}); ok {
+			structMap := make(map[string]interface{})
+			for k := range structInterfaceMap {
+				structMap[k.(string)] = structInterfaceMap[k]
+			}
+			return p.parseModelValues(structMap, model)
 		}
 		panic(errors.ParsingError.Newf("model %s: field %s is not a map", fieldType, value))
 	}

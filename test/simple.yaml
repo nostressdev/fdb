@@ -14,7 +14,6 @@ models:
       - name: "name"
         type: "string"
         default-value: "field-default-name"
-  
   - name: "external"
     external-model: "filename.proto/MessageName"
 tables:
