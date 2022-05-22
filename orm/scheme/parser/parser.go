@@ -7,7 +7,7 @@ import (
 
 	"github.com/nostressdev/fdb/errors"
 	"github.com/nostressdev/fdb/orm/scheme"
-	"gopkg.in/yaml.v3"
+	"gopkg.in/yaml.v2"
 )
 
 type Parser struct {
