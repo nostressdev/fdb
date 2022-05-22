@@ -1,5 +1,13 @@
 package graph
 
+type VisitedType int
+
+const (
+	NotVisited = VisitedType(iota)
+	Entered
+	Exited
+)
+
 type Graph struct {
 	nodes         map[string]bool
 	adjucencyList map[string][]string
@@ -21,38 +29,38 @@ func (g *Graph) AddEdge(from, to string) {
 }
 
 func (g *Graph) IsCyclic() (bool, []string) {
-	visited := make(map[string]int)
-	path := make([]string, 0)
+	visited := make(map[string]VisitedType)
 	for node := range g.nodes {
-		if g.isCyclic(node, visited, &path) {
-			return true, path
+		if visited[node] == 0 {
+			if path, ok := g.isCyclic(node, visited, nil); ok {
+				for i, j := 0, len(path)-1; i < j; i, j = i+1, j-1 {
+					path[i], path[j] = path[j], path[i]
+				}
+				return true, path
+			}
 		}
 	}
 	return false, nil
 }
 
-func (g *Graph) isCyclic(node string, visited map[string]int, path *[]string) bool {
-	visited[node] = 1
-	*path = append(*path, node)
+func (g *Graph) isCyclic(node string, visited map[string]VisitedType, path []string) ([]string, bool) {
+	visited[node] = Entered
+	path = append(path, node)
 	for _, to := range g.adjucencyList[node] {
 		if visited[to] == 1 {
-			begin := len(*path) - 1
-			*path = append(*path, to)
-			for (*path)[begin] != to {
+			begin := len(path) - 1
+			path = append(path, to)
+			for path[begin] != to {
 				begin -= 1
 			}
-			*path = (*path)[begin:]
-			for i, j := 0, len(*path)-1; i < j; i, j = i+1, j-1 {
-				(*path)[i], (*path)[j] = (*path)[j], (*path)[i]
-			}
-			return true
+			path = path[begin:]
+			return path, true
 		} else if visited[to] == 0 {
-			if g.isCyclic(to, visited, path) {
-				return true
+			if path, ok := g.isCyclic(to, visited, path); ok {
+				return path, true
 			}
 		}
 	}
-	visited[node] = 2
-	*path = (*path)[:len(*path)-1]
-	return false
+	visited[node] = Exited
+	return nil, false
 }

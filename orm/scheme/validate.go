@@ -42,7 +42,7 @@ func (c *GeneratorConfig) checkCycles() {
 	for _, model := range c.Models {
 		graph.AddNode(model.Name)
 		for _, field := range model.Fields {
-			if ok := primitives[field.Type]; ok {
+			if primitives[field.Type] {
 				continue
 			}
 			graph.AddEdge(model.Name, field.Type[1:])

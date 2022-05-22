@@ -13,7 +13,6 @@ import (
 type Parser struct {
 	Models   map[string]*scheme.Model
 	Decoders []decoder
-	Configs  []*scheme.GeneratorConfig
 }
 
 type decoder interface {
@@ -32,15 +31,16 @@ func (p *Parser) AddYAML(reader io.Reader) {
 	p.addDecoder(yaml.NewDecoder(reader))
 }
 
-func (p *Parser) init() {
+func (p *Parser) init() []*scheme.GeneratorConfig {
 	modelsSet := make(map[string]bool)
+	configs := make([]*scheme.GeneratorConfig, 0)
 	for _, decoder := range p.Decoders {
 		config := &scheme.GeneratorConfig{}
 		err := decoder.Decode(config)
 		if err != nil {
 			panic(err)
 		}
-		p.Configs = append(p.Configs, config)
+		configs = append(configs, config)
 		for i := range config.Models {
 			model := config.Models[i]
 			if modelsSet[model.Name] {
@@ -50,22 +50,30 @@ func (p *Parser) init() {
 			modelsSet[model.Name] = true
 		}
 	}
+	return configs
 }
 
 func (p *Parser) parseField(value interface{}, fieldType string) interface{} {
 	if value == nil {
 		return nil
 	}
+	// While parsing default values we don't have exact type of field,
+	// only `interface{}`, so we need to check it here.
+	// gopkg.in/yaml.v2 and encoding/json Unmarshall interpret all integer values
+	// (including signed and unsigned) as `int`, and if value is out of bounds
+	// of `int`, it will be interpreted as `int64` and if it is out of bounds of
+	// `int64` it will be interpreted as `uint64`.
+	// Also `int` bounds depend on architecture, so we need to handle both cases.
 	switch fieldType {
 	case "int32":
 		return int32(value.(int))
-	case "int64": // yaml parses int64 as int on 64bit and as int64 on 32bit
+	case "int64":
 		if val, ok := value.(int); ok {
 			return int64(val)
 		} else if val, ok := value.(int64); ok {
 			return val
 		}
-	case "uint32": // yaml parses uint32 as int on 64bit and as int64 on 32bit
+	case "uint32":
 		if val, ok := value.(int); ok {
 			return uint32(val)
 		} else if val, ok := value.(int64); ok {
@@ -143,10 +151,10 @@ func (p *Parser) Parse() (config *scheme.GeneratorConfig, err error) {
 			}
 		}
 	}()
-	p.init()
+	configs := p.init()
 	models := make([]*scheme.Model, 0)
 	tables := make([]*scheme.Table, 0)
-	for _, config := range p.Configs {
+	for _, config := range configs {
 		p.parseValues(config)
 		models = append(models, config.Models...)
 		tables = append(tables, config.Tables...)
@@ -161,6 +169,7 @@ func (p *Parser) Parse() (config *scheme.GeneratorConfig, err error) {
 
 func FillValues(config *scheme.GeneratorConfig) *scheme.GeneratorConfig {
 	for _, table := range config.Tables {
+		table.ColumnsSet = make(map[string]bool)
 		for _, column := range table.Columns {
 			column.Table = table
 			table.ColumnsSet[column.Name] = true
@@ -174,8 +183,7 @@ func FillValues(config *scheme.GeneratorConfig) *scheme.GeneratorConfig {
 
 func New() *Parser {
 	parser := &Parser{
-		Models:  make(map[string]*scheme.Model),
-		Configs: []*scheme.GeneratorConfig{},
+		Models: make(map[string]*scheme.Model),
 	}
 	return parser
 }
