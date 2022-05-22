@@ -33,9 +33,6 @@ func (g *Graph) IsCyclic() (bool, []string) {
 	for node := range g.nodes {
 		if visited[node] == 0 {
 			if path, ok := g.isCyclic(node, visited, nil); ok {
-				for i, j := 0, len(path)-1; i < j; i, j = i+1, j-1 {
-					path[i], path[j] = path[j], path[i]
-				}
 				return true, path
 			}
 		}
