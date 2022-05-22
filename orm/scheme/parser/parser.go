@@ -15,13 +15,13 @@ type Parser struct {
 	Configs []*scheme.GeneratorConfig
 }
 
-type Decoder interface {
+type decoder interface {
 	Decode(v interface{}) error
 }
 
-func (p *Parser) AddDecoder(decoder Decoder) error {
+func (p *Parser) addDecoder(d decoder) error {
 	config := &scheme.GeneratorConfig{}
-	err := decoder.Decode(config)
+	err := d.Decode(config)
 	if err != nil {
 		return errors.ParsingError.Wrap(err, "failed to decode config")
 	}
@@ -30,11 +30,11 @@ func (p *Parser) AddDecoder(decoder Decoder) error {
 }
 
 func (p *Parser) AddJSON(reader io.Reader) error {
-	return p.AddDecoder(json.NewDecoder(reader))
+	return p.addDecoder(json.NewDecoder(reader))
 }
 
 func (p *Parser) AddYAML(reader io.Reader) error {
-	return p.AddDecoder(yaml.NewDecoder(reader))
+	return p.addDecoder(yaml.NewDecoder(reader))
 }
 
 func (p *Parser) init() {
