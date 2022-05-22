@@ -19,7 +19,7 @@ func TestParseYAML(t *testing.T) {
 	}{
 		{
 			name:     "simple test",
-			filename: "../../../test/simple.yaml",
+			filename: "test/simple.yaml",
 			want: FillValues(&scheme.GeneratorConfig{
 				Models: []*scheme.Model{
 					{
@@ -58,7 +58,7 @@ func TestParseYAML(t *testing.T) {
 		},
 		{
 			name:     "integer limits yaml test",
-			filename: "../../../test/integer-limits.yaml",
+			filename: "test/integer-limits.yaml",
 			want: FillValues(&scheme.GeneratorConfig{
 				Models: []*scheme.Model{
 					{
@@ -76,7 +76,7 @@ func TestParseYAML(t *testing.T) {
 		},
 		{
 			name:     "integer limits json test",
-			filename: "../../../test/integer-limits.json",
+			filename: "test/integer-limits.json",
 			want: FillValues(&scheme.GeneratorConfig{
 				Models: []*scheme.Model{
 					{
@@ -119,7 +119,7 @@ func TestParseYAMLWithErrors(t *testing.T) {
 	}{
 		{
 			name:     "models loop test",
-			filename: "../../../test/models-loop.yaml",
+			filename: "test/models-loop.yaml",
 		},
 	}
 	for _, tt := range tests {

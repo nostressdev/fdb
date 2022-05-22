@@ -17,7 +17,7 @@ var filenames = []string{
 func FuzzParseYaml(f *testing.F) {
 	println(os.Getwd())
 	for _, filename := range filenames {
-		data, err := os.ReadFile("../../../" + filename)
+		data, err := os.ReadFile(filename)
 		if err != nil {
 			panic(err)
 		}

@@ -44,7 +44,7 @@ func (g *Graph) isCyclic(node string, visited map[string]VisitedType, path []str
 	visited[node] = Entered
 	path = append(path, node)
 	for _, to := range g.adjucencyList[node] {
-		if visited[to] == 1 {
+		if visited[to] == Entered {
 			begin := len(path) - 1
 			path = append(path, to)
 			for path[begin] != to {
@@ -52,7 +52,7 @@ func (g *Graph) isCyclic(node string, visited map[string]VisitedType, path []str
 			}
 			path = path[begin:]
 			return path, true
-		} else if visited[to] == 0 {
+		} else if visited[to] == NotVisited {
 			if path, ok := g.isCyclic(to, visited, path); ok {
 				return path, true
 			}
