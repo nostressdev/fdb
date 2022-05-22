@@ -4,6 +4,7 @@ import (
 	"strings"
 
 	"github.com/nostressdev/fdb/errors"
+	"github.com/nostressdev/fdb/orm/scheme/utils"
 	"github.com/nostressdev/fdb/orm/scheme/utils/graph"
 )
 
@@ -21,9 +22,7 @@ var primitives = map[string]bool{
 func (c *GeneratorConfig) validateModels() {
 	modelsSet := make(map[string]bool)
 	for _, model := range c.Models {
-		if ok := modelsSet[model.Name]; ok {
-			panic(errors.ValidationError.Newf("model %s is duplicated", model.Name))
-		}
+		utils.Validatef(modelsSet[model.Name], "model %s is duplicated", model.Name)
 		modelsSet[model.Name] = true
 		model.validate()
 	}
@@ -32,9 +31,7 @@ func (c *GeneratorConfig) validateModels() {
 func (c *GeneratorConfig) validateTables() {
 	tablesSet := make(map[string]bool)
 	for _, table := range c.Tables {
-		if ok := tablesSet[table.Name]; ok {
-			panic(errors.ValidationError.Newf("table %s is duplicated", table.Name))
-		}
+		utils.Validatef(tablesSet[table.Name], "table %s is duplicated", table.Name)
 		tablesSet[table.Name] = true
 		table.validate()
 	}
@@ -51,9 +48,8 @@ func (c *GeneratorConfig) checkCycles() {
 			graph.AddEdge(model.Name, field.Type[1:])
 		}
 	}
-	if ok, cycle := graph.IsCyclic(); ok {
-		panic(errors.ValidationError.Newf("models cycle detected: %s", strings.Join(cycle, " -> ")))
-	}
+	ok, cycle := graph.IsCyclic()
+	utils.Validatef(ok, "models cycle detected: %s", strings.Join(cycle, " -> "))
 }
 
 func (c *GeneratorConfig) Validate() (err error) {

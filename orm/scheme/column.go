@@ -1,12 +1,8 @@
 package scheme
 
-import "github.com/nostressdev/fdb/errors"
+import "github.com/nostressdev/fdb/orm/scheme/utils"
 
 func (column *Column) validate() {
-	if column.Name == "" {
-		panic(errors.ValidationError.Newf("table %s: column has no name", column.Table.Name))
-	}
-	if column.Type == "" {
-		panic(errors.ValidationError.Newf("table %s: column %s has no type", column.Table.Name, column.Name))
-	}
+	utils.Validatef(column.Name == "", "table %s: column has no name", column.Table.Name)
+	utils.Validatef(column.Type == "", "table %s: column %s has no type", column.Table.Name, column.Name)
 }
