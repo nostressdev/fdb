@@ -40,7 +40,6 @@ func TestParseYAML(t *testing.T) {
 				Tables: []scheme.Table{
 					{
 						Name:        "table",
-						StoragePath: "table",
 						RangeIndexes: []scheme.RangeIndex{
 							{Name: "age", IK: []string{"age"}, Columns: []string{"age", "id"}, Async: true},
 						},

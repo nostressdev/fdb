@@ -19,7 +19,6 @@ type Field struct {
 
 type Table struct {
 	Name         string       `yaml:"name"`
-	StoragePath  string       `yaml:"storage-path"`
 	RangeIndexes []RangeIndex `yaml:"range-indexes"`
 	Columns      []Column     `yaml:"columns"`
 	PK           []string     `yaml:"pk"`
@@ -29,6 +28,7 @@ type Column struct {
 	Name         string      `yaml:"name"`
 	Type         string      `yaml:"type"`
 	DefaultValue interface{} `yaml:"default-value"`
+	Table        *Table
 }
 
 type RangeIndex struct {
@@ -36,4 +36,5 @@ type RangeIndex struct {
 	IK      []string `yaml:"ik"`
 	Columns []string `yaml:"columns"`
 	Async   bool     `yaml:"async"`
+	Table   *Table
 }

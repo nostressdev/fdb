@@ -1,145 +1,58 @@
 package scheme
 
-import "github.com/nostressdev/fdb/errors"
+import (
+	"strings"
 
-var primitives = map[string]struct{}{
-	"int32":  {},
-	"int64":  {},
-	"uint32": {},
-	"uint64": {},
-	"string": {},
-	"bool":   {},
-	"float":  {},
-	"double": {},
-}
+	"github.com/nostressdev/fdb/errors"
+	"github.com/nostressdev/fdb/orm/scheme/utils/graph"
+)
 
-func (model *Model) validate() {
-	if model.ExternalModel != "" {
-		// TODO: validate external model
-		return
-	}
-	set := make(map[string]struct{})
-	for _, field := range model.Fields {
-		if field.Type == "" {
-			panic(errors.ValidationError.Newf("field %s:%s has no type", model.Name, field.Name))
-		}
-		if _, ok := set[field.Name]; ok {
-			panic(errors.ValidationError.Newf("field %s:%s is duplicated", model.Name, field.Name))
-		}
-		set[field.Name] = struct{}{}
-	}
+var primitives = map[string]bool{
+	"int32":  true,
+	"int64":  true,
+	"uint32": true,
+	"uint64": true,
+	"string": true,
+	"bool":   true,
+	"float":  true,
+	"double": true,
 }
 
 func (c *GeneratorConfig) validateModels() {
-	modelsSet := make(map[string]struct{})
+	modelsSet := make(map[string]bool)
 	for _, model := range c.Models {
-		if _, ok := modelsSet[model.Name]; ok {
+		if ok := modelsSet[model.Name]; ok {
 			panic(errors.ValidationError.Newf("model %s is duplicated", model.Name))
 		}
-		modelsSet[model.Name] = struct{}{}
+		modelsSet[model.Name] = true
 		model.validate()
 	}
 }
 
-func (c *GeneratorConfig) validateColumns(table *Table) map[string]struct{} {
-	columnsSet := make(map[string]struct{})
-	for _, column := range table.Columns {
-		if _, ok := columnsSet[column.Name]; ok {
-			panic(errors.ValidationError.Newf("column %s:%s is duplicated", table.Name, column.Name))
-		}
-		columnsSet[column.Name] = struct{}{}
-		if column.Name == "" {
-			panic(errors.ValidationError.Newf("table %s: column has no name", table.Name))
-		}
-		if column.Type == "" {
-			panic(errors.ValidationError.Newf("table %s: column %s has no type", table.Name, column.Name))
-		}
-	}
-	for _, pk := range table.PK {
-		if _, ok := columnsSet[pk]; !ok {
-			panic(errors.ValidationError.Newf("table %s: primary key %s is not in columns", table.Name, pk))
-		}
-	}
-	return columnsSet
-}
-
-func (c *GeneratorConfig) validateIndexes(table *Table, columnsSet map[string]struct{}) {
-	indexesSet := make(map[string]struct{})
-	for _, index := range table.RangeIndexes {
-		if _, ok := indexesSet[index.Name]; ok {
-			panic(errors.ValidationError.Newf("table %s: range index %s is duplicated", table.Name, index.Name))
-		}
-		if index.Name == "" {
-			panic(errors.ValidationError.Newf("table %s: range index has no name", table.Name))
-		}
-		if len(index.IK) == 0 {
-			panic(errors.ValidationError.Newf("table %s: range index %s has no ik", table.Name, index.Name))
-		}
-		if len(index.Columns) == 0 {
-			panic(errors.ValidationError.Newf("table %s: range index %s has no columns", table.Name, index.Name))
-		}
-		for _, ik := range index.IK {
-			if _, ok := columnsSet[ik]; !ok {
-				panic(errors.ValidationError.Newf("table %s: range index %s: ik %s is not in columns", table.Name, index.Name, ik))
-			}
-		}
-		for _, column := range index.Columns {
-			if _, ok := columnsSet[column]; !ok {
-				panic(errors.ValidationError.Newf("table %s: range index %s: column %s is not in columns", table.Name, index.Name, column))
-			}
-		}
-	}
-}
-
 func (c *GeneratorConfig) validateTables() {
-	tablesSet := make(map[string]struct{})
+	tablesSet := make(map[string]bool)
 	for _, table := range c.Tables {
-		if _, ok := tablesSet[table.Name]; ok {
+		if ok := tablesSet[table.Name]; ok {
 			panic(errors.ValidationError.Newf("table %s is duplicated", table.Name))
 		}
-		tablesSet[table.Name] = struct{}{}
-		if table.StoragePath == "" {
-			panic(errors.ValidationError.Newf("table %s has no storage path", table.Name))
-		}
-		if len(table.Columns) == 0 {
-			panic(errors.ValidationError.Newf("table %s has no columns", table.Name))
-		}
-		if len(table.PK) == 0 {
-			panic(errors.ValidationError.Newf("table %s has no primary key", table.Name))
-		}
-		columnsSet := c.validateColumns(&table)
-		c.validateIndexes(&table, columnsSet)
+		tablesSet[table.Name] = true
+		table.validate()
 	}
 }
 
 func (c *GeneratorConfig) checkCycles() {
-	names := make(map[string]*Model)
+	graph := graph.New()
 	for _, model := range c.Models {
-		names[model.Name] = &model
-	}
-	used := make(map[*Model]int)
-	stack := make([]*Model, 0)
-	for _, model := range c.Models {
-		if _, ok := used[&model]; !ok {
-			stack = append(stack, &model)
-			for len(stack) > 0 {
-				model := stack[len(stack)-1]
-				stack = stack[:len(stack)-1]
-				used[model] = 1
-				for _, field := range model.Fields {
-					if _, ok := primitives[field.Type]; !ok {
-						if nextModel, ok := names[field.Type[1:]]; !ok {
-							panic(errors.ValidationError.Newf("model %s: field %s: type %s is not defined", nextModel.Name, field.Name, field.Type))
-						} else if value := used[nextModel]; value == 1 {
-							panic(errors.ValidationError.Newf("model %s: field %s: type %s is cyclic", model.Name, field.Name, field.Type))
-						} else if value != 2 {
-							stack = append(stack, nextModel)
-						}
-					}
-				}
-				used[model] = 2
+		graph.AddNode(model.Name)
+		for _, field := range model.Fields {
+			if ok := primitives[field.Type]; ok {
+				continue
 			}
+			graph.AddEdge(model.Name, field.Type[1:])
 		}
+	}
+	if ok, cycle := graph.IsCyclic(); ok {
+		panic(errors.ValidationError.Newf("models cycle detected: %s", strings.Join(cycle, " -> ")))
 	}
 }
 
