@@ -24,18 +24,27 @@ func (g *Graph) IsCyclic() (bool, []string) {
 	visited := make(map[string]int)
 	path := make([]string, 0)
 	for node := range g.nodes {
-		if g.isCyclic(node, visited, path) {
+		if g.isCyclic(node, visited, &path) {
 			return true, path
 		}
 	}
 	return false, nil
 }
 
-func (g *Graph) isCyclic(node string, visited map[string]int, path []string) bool {
+func (g *Graph) isCyclic(node string, visited map[string]int, path *[]string) bool {
 	visited[node] = 1
-	path = append(path, node)
+	*path = append(*path, node)
 	for _, to := range g.adjucencyList[node] {
 		if visited[to] == 1 {
+			begin := len(*path) - 1
+			*path = append(*path, to)
+			for (*path)[begin] != to {
+				begin -= 1
+			}
+			*path = (*path)[begin:]
+			for i, j := 0, len(*path)-1; i < j; i, j = i+1, j-1 {
+				(*path)[i], (*path)[j] = (*path)[j], (*path)[i]
+			}
 			return true
 		} else if visited[to] == 0 {
 			if g.isCyclic(to, visited, path) {
@@ -44,6 +53,6 @@ func (g *Graph) isCyclic(node string, visited map[string]int, path []string) boo
 		}
 	}
 	visited[node] = 2
-	path = path[:len(path)-1]
+	*path = (*path)[:len(*path)-1]
 	return false
 }

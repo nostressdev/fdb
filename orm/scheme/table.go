@@ -33,7 +33,7 @@ func (table *Table) validateIndexes(columnsSet map[string]bool) {
 func (table *Table) validatePK(columnsSet map[string]bool) {
 	pkSet := make(map[string]bool)
 	for _, pk := range table.PK {
-		utils.Validatef(columnsSet[pk], "table %s: primary key %s is not in columns", table.Name, pk)
+		utils.Validatef(!columnsSet[pk], "table %s: primary key %s is not in columns", table.Name, pk)
 		utils.Validatef(pkSet[pk], "table %s: primary key %s is duplicated", table.Name, pk)
 	}
 }

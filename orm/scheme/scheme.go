@@ -1,14 +1,14 @@
 package scheme
 
 type GeneratorConfig struct {
-	Models []Model `yaml:"models"`
-	Tables []Table `yaml:"tables"`
+	Models []*Model `yaml:"models"`
+	Tables []*Table `yaml:"tables"`
 }
 
 type Model struct {
-	Name          string  `yaml:"name"`
-	Fields        []Field `yaml:"fields"`
-	ExternalModel string  `yaml:"external-model"`
+	Name          string   `yaml:"name"`
+	Fields        []*Field `yaml:"fields"`
+	ExternalModel string   `yaml:"external-model"`
 }
 
 type Field struct {
@@ -18,10 +18,10 @@ type Field struct {
 }
 
 type Table struct {
-	Name         string       `yaml:"name"`
-	RangeIndexes []RangeIndex `yaml:"range-indexes"`
-	Columns      []Column     `yaml:"columns"`
-	PK           []string     `yaml:"pk"`
+	Name         string        `yaml:"name"`
+	RangeIndexes []*RangeIndex `yaml:"range-indexes"`
+	Columns      []*Column     `yaml:"columns"`
+	PK           []string      `yaml:"pk"`
 }
 
 type Column struct {

@@ -9,7 +9,7 @@ func Validate(expression bool, text string) {
 }
 
 func Validatef(expression bool, format string, args ...interface{}) {
-	if !expression {
+	if expression {
 		panic(errors.ValidationError.Newf(format, args...))
 	}
 }
