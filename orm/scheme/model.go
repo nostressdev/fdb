@@ -7,6 +7,7 @@ func (model *Model) validate() {
 		// TODO: validate external model
 		return
 	}
+	utils.Validatef(model.Name == "", "model name is empty")
 	set := make(map[string]bool)
 	for _, field := range model.Fields {
 		utils.Validatef(field.Type == "", "field %s:%s has no type", model.Name, field.Name)

@@ -5,6 +5,7 @@ import (
 )
 
 func (table *Table) validate() {
+	utils.Validatef(table.Name == "", "table name is empty")
 	utils.Validatef(len(table.Columns) == 0, "table %s has no columns", table.Name)
 	utils.Validatef(len(table.PK) == 0, "table %s has no primary key", table.Name)
 	table.validateColumns()

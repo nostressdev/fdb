@@ -10,11 +10,12 @@ func (index *RangeIndex) validate() {
 	for _, ik := range index.IK {
 		utils.Validatef(!index.Table.ColumnsSet[ik], "table %s: range index %s: ik %s is not in columns", index.Table.Name, index.Name, ik)
 		utils.Validatef(ikSet[ik], "table %s: range index %s: ik %s is duplicated", index.Table.Name, index.Name, ik)
-
+		ikSet[ik] = true
 	}
 	indexColumnsSet := make(map[string]bool)
 	for _, column := range index.Columns {
 		utils.Validatef(!index.Table.ColumnsSet[column], "table %s: range index %s: column %s is not in columns", index.Table.Name, index.Name, column)
 		utils.Validatef(indexColumnsSet[column], "table %s: range index %s: column %s is duplicated", index.Table.Name, index.Name, column)
+		indexColumnsSet[column] = true
 	}
 }
