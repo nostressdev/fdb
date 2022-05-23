@@ -55,16 +55,16 @@ func TestValidatef(t *testing.T) {
 		args       []interface{}
 	}
 	tests := []struct {
-		name string
-		args args
+		name      string
+		args      args
 		wantPanic bool
 	}{
 		{
 			name: "expression is true",
 			args: args{
 				expression: true,
-				format:       "%s %s",
-				args: 	   []interface{}{"test", "test"},
+				format:     "%s %s",
+				args:       []interface{}{"test", "test"},
 			},
 			wantPanic: true,
 		},
@@ -72,8 +72,8 @@ func TestValidatef(t *testing.T) {
 			name: "expression is false",
 			args: args{
 				expression: false,
-				format:       "%s %s",
-				args: 	   []interface{}{"test", "test"},
+				format:     "%s %s",
+				args:       []interface{}{"test", "test"},
 			},
 			wantPanic: false,
 		},
