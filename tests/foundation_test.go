@@ -9,7 +9,7 @@ import (
 )
 
 func Test_CreateTable(t *testing.T) {
-	table, err := gen_fdb.NewUsersTable(to)
+	table, err := gen_fdb.NewUsersTable(toUsers)
 	AssertError(t, err)
 	row := &gen_fdb.UsersTableRow{Man: gen_fdb.User{ID: "id", Age: 57}, Ts: 123}
 	fdb.MustAPIVersion(600)

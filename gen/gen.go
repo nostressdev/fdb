@@ -63,6 +63,29 @@ func GenFiles(config *scheme.GeneratorConfig) {
 		if err != nil {
 			panic(err)
 		}
+
+		gFile = &protogen.GeneratedFile{}
+		GenEncoder(gFile, config, i)
+		c, err = gFile.Content()
+		if err != nil {
+			panic(err)
+		}
+		c, err = format.Source(c)
+		if err != nil {
+			panic(err)
+		}
+		f, err = os.Create(config.FilesPath + table.Name + "TableEncoder.g.go")
+		if err != nil {
+			panic(err)
+		}
+		_, err = f.Write(c)
+		if err != nil {
+			panic(err)
+		}
+		err = f.Close()
+		if err != nil {
+			panic(err)
+		}
 	}
 }
 
@@ -88,4 +111,15 @@ func GenTable(gFile *protogen.GeneratedFile, config *scheme.GeneratorConfig, ind
 	gFile.P(")")
 	gFile.P()
 	GenerateTable(gFile, config.Tables[index], config.Models)
+}
+
+func GenEncoder(gFile *protogen.GeneratedFile, config *scheme.GeneratorConfig, index int) {
+	gFile.P("package " + config.PackageName)
+	gFile.P()
+	gFile.P("import (")
+	gFile.P("	\"encoding/json\"")
+	gFile.P(")")
+	gFile.P()
+	GenerateEncoder(gFile, config.Tables[index])
+	GenerateDecoder(gFile, config.Tables[index])
 }

@@ -84,12 +84,12 @@ func generateFutureTableRowStruct(gFile *protogen.GeneratedFile, table *scheme.T
 }
 
 func generateMethods(gFile *protogen.GeneratedFile, table *scheme.Table, models []*scheme.Model) {
-	generateTableMethods(gFile, table, models)
+	generateTableMethods(gFile, table)
 	generateTablePKMethods(gFile, table, models)
 	generateFutureTableRowMethods(gFile, table)
 }
 
-func generateTableMethods(gFile *protogen.GeneratedFile, table *scheme.Table, models []*scheme.Model) {
+func generateTableMethods(gFile *protogen.GeneratedFile, table *scheme.Table) {
 	gFile.P("func (table *" + table.Name + "Table) Get(tr fdb.ReadTransaction, pk *" + table.Name + "TablePK) (*Future" + table.Name + "TableRow, error) {")
 	gFile.P("	key, err := pk.Pack()")
 	gFile.P("	if err != nil {")
@@ -126,7 +126,7 @@ func generateTableMethods(gFile *protogen.GeneratedFile, table *scheme.Table, mo
 	gFile.P("	if err != nil {")
 	gFile.P("		return err")
 	gFile.P("	}")
-	gFile.P("	fmt.Println(value)")
+	gFile.P("	fmt.Println(string(value))")
 	gFile.P("	fmt.Println(table.Sub.Sub(key...).Bytes())")
 	gFile.P("	tr.Set(table.Sub.Sub(key...), value)")
 	gFile.P("	return nil")
@@ -254,7 +254,7 @@ func generateFutureTableRowMethods(gFile *protogen.GeneratedFile, table *scheme.
 		if err != nil {
 			return nil, err
 		}
-		fmt.Println(value)
+		fmt.Println(string(value))
 		return future.new%[1]sTableRow(value)
 	}`
 	gFile.P(fmt.Sprintf(funcGetString, table.Name))
