@@ -9,13 +9,10 @@ services:
 
   fdb-service:
     build:
-      context: .
-      dockerfile: docker/Dockerfile
+      context: ..
+      dockerfile: gen/docker/Dockerfile
     depends_on:
       - fdb
     environment:
-      - PORT=80
-      - HOST=0.0.0.0
       - FDB_COORDINATOR=fdb
-      - NATS=nats:4222
-    command: bash -c "./docker/docker-entrypoint.test.sh"
+    command: bash -c "gen/docker/docker-entrypoint.test.sh"

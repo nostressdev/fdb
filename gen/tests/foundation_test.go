@@ -3,16 +3,16 @@ package tests
 import (
 	"fmt"
 	"github.com/apple/foundationdb/bindings/go/src/fdb"
-	gen_fdb "github.com/nostressdev/fdb/tests/generated"
+	generated "github.com/nostressdev/fdb/gen/tests/generated"
 	"github.com/stretchr/testify/assert"
 	"log"
 	"testing"
 )
 
 func Test_CreateTable(t *testing.T) {
-	table, err := gen_fdb.NewUsersTable(toUsers)
+	table, err := generated.NewUsersTable(toUsers)
 	assert.Nil(t, err)
-	row := &gen_fdb.UsersTableRow{Man: gen_fdb.User{ID: "id", Age: 57}, Ts: 123}
+	row := &generated.UsersTableRow{Man: generated.User{ID: "id", Age: 57}, Ts: 123}
 	fdb.MustAPIVersion(600)
 	db := fdb.MustOpenDefault()
 
@@ -30,7 +30,7 @@ func Test_CreateTable(t *testing.T) {
 	log.Println("3")
 
 	future, err := db.ReadTransact(func(tr fdb.ReadTransaction) (interface{}, error) {
-		return table.Get(tr, &gen_fdb.UsersTablePK{Ts: row.Ts, ManID: row.Man.ID})
+		return table.Get(tr, &generated.UsersTablePK{Ts: row.Ts, ManID: row.Man.ID})
 	})
 	assert.Nil(t, err)
 	if future == nil {
@@ -39,7 +39,7 @@ func Test_CreateTable(t *testing.T) {
 
 	log.Println("4")
 
-	resRow, err := future.(*gen_fdb.FutureUsersTableRow).Get()
+	resRow, err := future.(*generated.FutureUsersTableRow).Get()
 	assert.Nil(t, err)
 	assert.Equal(t, row, resRow, "equal res")
 }

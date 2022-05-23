@@ -24,4 +24,4 @@ if ! /usr/bin/fdbcli -C $FDB_CLUSTER_FILE --exec status --timeout 3 ; then
     fi
 fi
 
-make test
+cd gen && make test
