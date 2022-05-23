@@ -3,161 +3,157 @@ package gen
 import (
 	"fmt"
 	"github.com/nostressdev/fdb/orm/scheme"
-	"google.golang.org/protobuf/compiler/protogen"
 	"strings"
 )
 
-func GenerateTable(gFile *protogen.GeneratedFile, table *scheme.Table, models []*scheme.Model) {
+func GenerateTable(gFile *GeneratedFile, table *scheme.Table, models []*scheme.Model) {
 	generateStructs(gFile, table, models)
 	generateMethods(gFile, table, models)
 }
 
-func generateStructs(gFile *protogen.GeneratedFile, table *scheme.Table, models []*scheme.Model) {
+func generateStructs(gFile *GeneratedFile, table *scheme.Table, models []*scheme.Model) {
 	generateTableStruct(gFile, table)
 	generateTablePKStruct(gFile, table, models)
 	generateTableRowStruct(gFile, table)
 	generateFutureTableRowStruct(gFile, table)
 }
 
-func generateTableStruct(gFile *protogen.GeneratedFile, table *scheme.Table) {
-	gFile.P("type " + table.Name + "Table struct {")
-	gFile.P("	Enc lib.Encoder")
-	gFile.P("	Dec lib.Decoder")
-	gFile.P("	Sub subspace.Subspace")
-	gFile.P("}")
-	gFile.P()
-	gFile.P("func New" + table.Name + "Table(opts ...lib.TableOptions) (*" + table.Name + "Table, error) {")
-	gFile.P("	table := &" + table.Name + "Table{}")
-	gFile.P("	for _, opt := range opts {")
-	gFile.P("		if opt.Enc != nil {")
-	gFile.P("			table.Enc = opt.Enc")
-	gFile.P("		}")
-	gFile.P("		if opt.Dec != nil {")
-	gFile.P("			table.Dec = opt.Dec")
-	gFile.P("		}")
-	gFile.P("		if opt.Sub != nil {")
-	gFile.P("			table.Sub = opt.Sub")
-	gFile.P("		}")
-	gFile.P("	}")
-	gFile.P("	if table.Enc == nil {")
-	gFile.P("		return nil, fmt.Errorf(\"encoder is nil\")")
-	gFile.P("	}")
-	gFile.P("	if table.Dec == nil {")
-	gFile.P("		return nil, fmt.Errorf(\"decoder is nil\")")
-	gFile.P("	}")
-	gFile.P("	if table.Sub == nil {")
-	gFile.P("		return nil, fmt.Errorf(\"subspace is nil\")")
-	gFile.P("	}")
-	gFile.P("	return table, nil")
-	gFile.P("}")
-	gFile.P()
+func generateTableStruct(gFile *GeneratedFile, table *scheme.Table) {
+	gFile.Println("type " + table.Name + "Table struct {")
+	gFile.Println("	Enc lib.Encoder")
+	gFile.Println("	Dec lib.Decoder")
+	gFile.Println("	Sub subspace.Subspace")
+	gFile.Println("}")
+	gFile.Println("")
+	gFile.Println("func New" + table.Name + "Table(opts ...lib.TableOptions) (*" + table.Name + "Table, error) {")
+	gFile.Println("	table := &" + table.Name + "Table{}")
+	gFile.Println("	for _, opt := range opts {")
+	gFile.Println("		if opt.Enc != nil {")
+	gFile.Println("			table.Enc = opt.Enc")
+	gFile.Println("		}")
+	gFile.Println("		if opt.Dec != nil {")
+	gFile.Println("			table.Dec = opt.Dec")
+	gFile.Println("		}")
+	gFile.Println("		if opt.Sub != nil {")
+	gFile.Println("			table.Sub = opt.Sub")
+	gFile.Println("		}")
+	gFile.Println("	}")
+	gFile.Println("	if table.Enc == nil {")
+	gFile.Println("		return nil, fmt.Errorf(\"encoder is nil\")")
+	gFile.Println("	}")
+	gFile.Println("	if table.Dec == nil {")
+	gFile.Println("		return nil, fmt.Errorf(\"decoder is nil\")")
+	gFile.Println("	}")
+	gFile.Println("	if table.Sub == nil {")
+	gFile.Println("		return nil, fmt.Errorf(\"subspace is nil\")")
+	gFile.Println("	}")
+	gFile.Println("	return table, nil")
+	gFile.Println("}")
+	gFile.Println("")
 }
 
-func generateTablePKStruct(gFile *protogen.GeneratedFile, table *scheme.Table, models []*scheme.Model) {
-	gFile.P("type " + table.Name + "TablePK struct {")
+func generateTablePKStruct(gFile *GeneratedFile, table *scheme.Table, models []*scheme.Model) {
+	gFile.Println("type " + table.Name + "TablePK struct {")
 	for _, column := range table.PK {
 		tp, err := getType(table, models, column)
 		if err != nil {
 			panic(err)
 		}
-		gFile.P("		" + strings.Join(strings.Split(column, "."), "") + " " + tp)
+		gFile.Println("		" + strings.Join(strings.Split(column, "."), "") + " " + tp)
 	}
-	gFile.P("	}")
-	gFile.P()
+	gFile.Println("	}")
+	gFile.Println("")
 }
 
-func generateTableRowStruct(gFile *protogen.GeneratedFile, table *scheme.Table) {
-	gFile.P("type " + table.Name + "TableRow struct {")
+func generateTableRowStruct(gFile *GeneratedFile, table *scheme.Table) {
+	gFile.Println("type " + table.Name + "TableRow struct {")
 	for _, column := range table.Columns {
-		gFile.P("		" + column.Name + " " + column.Type)
+		gFile.Println("		" + column.Name + " " + column.Type)
 	}
-	gFile.P("	}")
-	gFile.P()
+	gFile.Println("	}")
+	gFile.Println("")
 }
 
-func generateFutureTableRowStruct(gFile *protogen.GeneratedFile, table *scheme.Table) {
-	gFile.P("type Future" + table.Name + "TableRow struct {")
-	gFile.P("	Dec lib.Decoder")
-	gFile.P("	Future fdb.FutureByteSlice")
-	gFile.P("}")
-	gFile.P()
+func generateFutureTableRowStruct(gFile *GeneratedFile, table *scheme.Table) {
+	gFile.Println("type Future" + table.Name + "TableRow struct {")
+	gFile.Println("	Dec lib.Decoder")
+	gFile.Println("	Future fdb.FutureByteSlice")
+	gFile.Println("}")
+	gFile.Println("")
 }
 
-func generateMethods(gFile *protogen.GeneratedFile, table *scheme.Table, models []*scheme.Model) {
+func generateMethods(gFile *GeneratedFile, table *scheme.Table, models []*scheme.Model) {
 	generateTableMethods(gFile, table)
 	generateTablePKMethods(gFile, table, models)
 	generateFutureTableRowMethods(gFile, table)
 }
 
-func generateTableMethods(gFile *protogen.GeneratedFile, table *scheme.Table) {
-	gFile.P("func (table *" + table.Name + "Table) Get(tr fdb.ReadTransaction, pk *" + table.Name + "TablePK) (*Future" + table.Name + "TableRow, error) {")
-	gFile.P("	key, err := pk.Pack()")
-	gFile.P("	if err != nil {")
-	gFile.P("		return nil, err")
-	gFile.P("	}")
-	gFile.P()
-	gFile.P("	fmt.Println(table.Sub.Sub(key...).Bytes())")
-	gFile.P("	future := tr.Get(table.Sub.Sub(key...))")
-	gFile.P("	return &Future" + table.Name + "TableRow{Future: future, Dec: table.Dec}, nil")
-	gFile.P("}")
-	gFile.P()
+func generateTableMethods(gFile *GeneratedFile, table *scheme.Table) {
+	gFile.Println("func (table *" + table.Name + "Table) Get(tr fdb.ReadTransaction, pk *" + table.Name + "TablePK) (*Future" + table.Name + "TableRow, error) {")
+	gFile.Println("	key, err := pk.Pack()")
+	gFile.Println("	if err != nil {")
+	gFile.Println("		return nil, err")
+	gFile.Println("	}")
+	gFile.Println("")
+	gFile.Println("	future := tr.Get(table.Sub.Sub(key...))")
+	gFile.Println("	return &Future" + table.Name + "TableRow{Future: future, Dec: table.Dec}, nil")
+	gFile.Println("}")
+	gFile.Println("")
 
-	gFile.P("func (table *" + table.Name + "Table) MustGet(tr fdb.ReadTransaction, pk *" + table.Name + "TablePK) *Future" + table.Name + "TableRow {")
-	gFile.P("	future, err := table.Get(tr, pk)")
-	gFile.P("	if err != nil {")
-	gFile.P("		panic(err)")
-	gFile.P("	}")
-	gFile.P("	return future")
-	gFile.P("}")
-	gFile.P()
+	gFile.Println("func (table *" + table.Name + "Table) MustGet(tr fdb.ReadTransaction, pk *" + table.Name + "TablePK) *Future" + table.Name + "TableRow {")
+	gFile.Println("	future, err := table.Get(tr, pk)")
+	gFile.Println("	if err != nil {")
+	gFile.Println("		panic(err)")
+	gFile.Println("	}")
+	gFile.Println("	return future")
+	gFile.Println("}")
+	gFile.Println("")
 
-	gFile.P("func (table *" + table.Name + "Table) Insert(tr fdb.Transaction, model *" + table.Name + "TableRow) error {")
-	gFile.P("	pk := &" + table.Name + "TablePK{")
+	gFile.Println("func (table *" + table.Name + "Table) Insert(tr fdb.Transaction, model *" + table.Name + "TableRow) error {")
+	gFile.Println("	pk := &" + table.Name + "TablePK{")
 	for _, column := range table.PK {
-		gFile.P("		" + strings.Join(strings.Split(column, "."), "") + ": model." + column + ",")
+		gFile.Println("		" + strings.Join(strings.Split(column, "."), "") + ": model." + column + ",")
 	}
-	gFile.P("	}")
-	gFile.P("	key, err := pk.Pack()")
-	gFile.P("	if err != nil {")
-	gFile.P("		return err")
-	gFile.P("	}")
-	gFile.P()
-	gFile.P("	value, err := table.Enc.Encode(model)")
-	gFile.P("	if err != nil {")
-	gFile.P("		return err")
-	gFile.P("	}")
-	gFile.P("	fmt.Println(string(value))")
-	gFile.P("	fmt.Println(table.Sub.Sub(key...).Bytes())")
-	gFile.P("	tr.Set(table.Sub.Sub(key...), value)")
-	gFile.P("	return nil")
-	gFile.P("}")
-	gFile.P()
+	gFile.Println("	}")
+	gFile.Println("	key, err := pk.Pack()")
+	gFile.Println("	if err != nil {")
+	gFile.Println("		return err")
+	gFile.Println("	}")
+	gFile.Println("")
+	gFile.Println("	value, err := table.Enc.Encode(model)")
+	gFile.Println("	if err != nil {")
+	gFile.Println("		return err")
+	gFile.Println("	}")
+	gFile.Println("	tr.Set(table.Sub.Sub(key...), value)")
+	gFile.Println("	return nil")
+	gFile.Println("}")
+	gFile.Println("")
 
-	gFile.P("func (table *" + table.Name + "Table) MustInsert(tr fdb.Transaction, model *" + table.Name + "TableRow) {")
-	gFile.P("	err := table.Insert(tr, model)")
-	gFile.P("	if err != nil {")
-	gFile.P("		panic(err)")
-	gFile.P("	}")
-	gFile.P("}")
-	gFile.P()
+	gFile.Println("func (table *" + table.Name + "Table) MustInsert(tr fdb.Transaction, model *" + table.Name + "TableRow) {")
+	gFile.Println("	err := table.Insert(tr, model)")
+	gFile.Println("	if err != nil {")
+	gFile.Println("		panic(err)")
+	gFile.Println("	}")
+	gFile.Println("}")
+	gFile.Println("")
 
-	gFile.P("func (table *" + table.Name + "Table) Delete(tr fdb.Transaction, pk *" + table.Name + "TablePK) error {")
-	gFile.P("	key, err := pk.Pack()")
-	gFile.P("	if err != nil {")
-	gFile.P("		return err")
-	gFile.P("	}")
-	gFile.P("	tr.Clear(table.Sub.Sub(key...))")
-	gFile.P("	return nil")
-	gFile.P("}")
-	gFile.P()
+	gFile.Println("func (table *" + table.Name + "Table) Delete(tr fdb.Transaction, pk *" + table.Name + "TablePK) error {")
+	gFile.Println("	key, err := pk.Pack()")
+	gFile.Println("	if err != nil {")
+	gFile.Println("		return err")
+	gFile.Println("	}")
+	gFile.Println("	tr.Clear(table.Sub.Sub(key...))")
+	gFile.Println("	return nil")
+	gFile.Println("}")
+	gFile.Println("")
 
-	gFile.P("func (table *" + table.Name + "Table) MustDelete(tr fdb.Transaction, pk *" + table.Name + "TablePK) {")
-	gFile.P("	err := table.Delete(tr, pk)")
-	gFile.P("	if err != nil {")
-	gFile.P("		panic(err)")
-	gFile.P("	}")
-	gFile.P("}")
-	gFile.P()
+	gFile.Println("func (table *" + table.Name + "Table) MustDelete(tr fdb.Transaction, pk *" + table.Name + "TablePK) {")
+	gFile.Println("	err := table.Delete(tr, pk)")
+	gFile.Println("	if err != nil {")
+	gFile.Println("		panic(err)")
+	gFile.Println("	}")
+	gFile.Println("}")
+	gFile.Println("")
 }
 
 func getType(table *scheme.Table, models []*scheme.Model, q string) (string, error) {
@@ -189,9 +185,9 @@ func getType(table *scheme.Table, models []*scheme.Model, q string) (string, err
 	return "", fmt.Errorf("don't find \"%s\" from \"%s\" in table columns", qSlice[0], q)
 }
 
-func generateTablePKMethods(gFile *protogen.GeneratedFile, table *scheme.Table, models []*scheme.Model) {
-	gFile.P("func (pk *" + table.Name + "TablePK) Pack() ([]tuple.TupleElement, error) {")
-	gFile.P("	var err error")
+func generateTablePKMethods(gFile *GeneratedFile, table *scheme.Table, models []*scheme.Model) {
+	gFile.Println("func (pk *" + table.Name + "TablePK) Pack() ([]tuple.TupleElement, error) {")
+	gFile.Println("	var err error")
 	elements := make([]string, 0, len(table.PK))
 	for _, column := range table.PK {
 		name := strings.Join(strings.Split(column, "."), "")
@@ -201,42 +197,42 @@ func generateTablePKMethods(gFile *protogen.GeneratedFile, table *scheme.Table, 
 		}
 		switch tp {
 		case "string":
-			gFile.P("	pk" + name + "Bytes := []byte(pk." + name + ")")
+			gFile.Println("	pk" + name + "Bytes := []byte(pk." + name + ")")
 		case "uint64":
-			gFile.P("	" + name + "Buf := new(bytes.Buffer)")
-			gFile.P("	err = binary.Write(" + name + "Buf, binary.BigEndian, pk." + name + ")")
-			gFile.P("	if err != nil {")
-			gFile.P("		return nil, err")
-			gFile.P("	}")
-			gFile.P("	pk" + name + "Bytes := " + name + "Buf.Bytes()")
+			gFile.Println("	" + name + "Buf := new(bytes.Buffer)")
+			gFile.Println("	err = binary.Write(" + name + "Buf, binary.BigEndian, pk." + name + ")")
+			gFile.Println("	if err != nil {")
+			gFile.Println("		return nil, err")
+			gFile.Println("	}")
+			gFile.Println("	pk" + name + "Bytes := " + name + "Buf.Bytes()")
 		case "int64":
-			gFile.P("	" + name + "Buf := new(bytes.Buffer)")
-			gFile.P("	err = binary.Write(" + name + "Buf, binary.BigEndian, " + name + ")")
-			gFile.P("	if err != nil {")
-			gFile.P("		return nil, err")
-			gFile.P("	}")
-			gFile.P("	pk" + name + "Bytes := " + name + "Buf.Bytes()")
+			gFile.Println("	" + name + "Buf := new(bytes.Buffer)")
+			gFile.Println("	err = binary.Write(" + name + "Buf, binary.BigEndian, " + name + ")")
+			gFile.Println("	if err != nil {")
+			gFile.Println("		return nil, err")
+			gFile.Println("	}")
+			gFile.Println("	pk" + name + "Bytes := " + name + "Buf.Bytes()")
 		case "float32":
-			gFile.P("	" + name + "Buf := new(bytes.Buffer)")
-			gFile.P("	err = binary.Write(" + name + "Buf, binary.BigEndian, " + name + ")")
-			gFile.P("	if err != nil {")
-			gFile.P("		return nil, err")
-			gFile.P("	}")
-			gFile.P("	pk" + name + "Bytes := " + name + "Buf.Bytes()")
+			gFile.Println("	" + name + "Buf := new(bytes.Buffer)")
+			gFile.Println("	err = binary.Write(" + name + "Buf, binary.BigEndian, " + name + ")")
+			gFile.Println("	if err != nil {")
+			gFile.Println("		return nil, err")
+			gFile.Println("	}")
+			gFile.Println("	pk" + name + "Bytes := " + name + "Buf.Bytes()")
 		default:
 			panic("unknown type " + tp)
 		}
 		elements = append(elements, "pk"+name+"Bytes")
 	}
-	gFile.P("	if err != nil {")
-	gFile.P("		return nil, err")
-	gFile.P("	}")
-	gFile.P("	return []tuple.TupleElement{" + strings.Join(elements, ", ") + "}, nil")
-	gFile.P("}")
-	gFile.P()
+	gFile.Println("	if err != nil {")
+	gFile.Println("		return nil, err")
+	gFile.Println("	}")
+	gFile.Println("	return []tuple.TupleElement{" + strings.Join(elements, ", ") + "}, nil")
+	gFile.Println("}")
+	gFile.Println("")
 }
 
-func generateFutureTableRowMethods(gFile *protogen.GeneratedFile, table *scheme.Table) {
+func generateFutureTableRowMethods(gFile *GeneratedFile, table *scheme.Table) {
 	funcNewTableRowString :=
 		`func (future *Future%[1]sTableRow) new%[1]sTableRow(value []byte) (*%[1]sTableRow, error) {
 			if row, err := future.Dec.Decode(value); err != nil {
@@ -245,8 +241,8 @@ func generateFutureTableRowMethods(gFile *protogen.GeneratedFile, table *scheme.
 				return row.(*%[1]sTableRow), nil
 			}
 		}`
-	gFile.P(fmt.Sprintf(funcNewTableRowString, table.Name))
-	gFile.P()
+	gFile.Println(fmt.Sprintf(funcNewTableRowString, table.Name))
+	gFile.Println("")
 
 	funcGetString :=
 		`func (future *Future%[1]sTableRow) Get() (*%[1]sTableRow, error) {
@@ -254,11 +250,10 @@ func generateFutureTableRowMethods(gFile *protogen.GeneratedFile, table *scheme.
 		if err != nil {
 			return nil, err
 		}
-		fmt.Println(string(value))
 		return future.new%[1]sTableRow(value)
 	}`
-	gFile.P(fmt.Sprintf(funcGetString, table.Name))
-	gFile.P()
+	gFile.Println(fmt.Sprintf(funcGetString, table.Name))
+	gFile.Println("")
 
 	funcMustGetString :=
 		`func (future *Future%[1]sTableRow) MustGet() *%[1]sTableRow {
@@ -268,6 +263,6 @@ func generateFutureTableRowMethods(gFile *protogen.GeneratedFile, table *scheme.
 		}
 		return value
 	}`
-	gFile.P(fmt.Sprintf(funcMustGetString, table.Name))
-	gFile.P()
+	gFile.Println(fmt.Sprintf(funcMustGetString, table.Name))
+	gFile.Println("")
 }
