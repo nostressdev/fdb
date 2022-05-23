@@ -42,4 +42,18 @@ func Test_CreateTable(t *testing.T) {
 	resRow, err := future.(*generated.FutureUsersTableRow).Get()
 	assert.Nil(t, err)
 	assert.Equal(t, row, resRow, "equal res")
+
+	_, err = db.Transact(func(tr fdb.Transaction) (interface{}, error) {
+		return nil, table.Delete(tr, &generated.UsersTablePK{Ts: row.Ts, ManID: row.Man.ID})
+	})
+	assert.Nil(t, err)
+
+	future, err = db.ReadTransact(func(tr fdb.ReadTransaction) (interface{}, error) {
+		return table.Get(tr, &generated.UsersTablePK{Ts: row.Ts, ManID: row.Man.ID})
+	})
+	assert.Nil(t, err)
+
+	resRow, err = future.(*generated.FutureUsersTableRow).Get()
+	assert.Nil(t, err)
+	assert.Nil(t, resRow)
 }

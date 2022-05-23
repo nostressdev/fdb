@@ -272,6 +272,9 @@ func generateFutureTableRowMethods(gFile *GeneratedFile, table *scheme.Table) {
 		if err != nil {
 			return nil, err
 		}
+		if value == nil {
+			return nil, nil
+		}
 		return future.new%[1]sTableRow(value)
 	}`
 	gFile.Println(fmt.Sprintf(funcGetString, table.Name))
