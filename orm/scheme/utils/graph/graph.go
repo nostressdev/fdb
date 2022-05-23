@@ -50,8 +50,7 @@ func (g *Graph) isCyclic(node string, visited map[string]VisitedType, path []str
 			for path[begin] != to {
 				begin -= 1
 			}
-			path = path[begin:]
-			return path, true
+			return path[begin:], true
 		} else if visited[to] == 0 {
 			if path, ok := g.isCyclic(to, visited, path); ok {
 				return path, true
