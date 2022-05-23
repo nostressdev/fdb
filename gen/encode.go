@@ -1,32 +1,37 @@
 package gen
 
 import (
+	"fmt"
 	"github.com/nostressdev/fdb/orm/scheme"
 )
 
 func GenerateEncoder(gFile *GeneratedFile, table *scheme.Table) {
-	gFile.Println("type " + table.Name + "TableRowJsonEncoder struct {")
-	gFile.Println("}")
-	gFile.Println("")
-	gFile.Println("func (enc *" + table.Name + "TableRowJsonEncoder) Encode(value interface{}) ([]byte, error){")
-	gFile.Println("	res, err := json.Marshal(value)")
-	gFile.Println("	if err != nil {")
-	gFile.Println("		panic(err)")
-	gFile.Println("	}")
-	gFile.Println("	return res, nil")
-	gFile.Println("}")
+	tableRowJsonEncoderString := `type %sTableRowJsonEncoder struct {}`
+	encodeString :=
+		`func (enc *%sTableRowJsonEncoder) Encode(value interface{}) ([]byte, error){
+			res, err := json.Marshal(value)
+			if err != nil {
+				panic(err)
+			}
+			return res, nil
+		}`
+
+	gFile.Println(fmt.Sprintf(tableRowJsonEncoderString, table.Name))
+	gFile.Println(fmt.Sprintf(encodeString, table.Name))
 }
 
 func GenerateDecoder(gFile *GeneratedFile, table *scheme.Table) {
-	gFile.Println("type " + table.Name + "TableRowJsonDecoder struct {")
-	gFile.Println("}")
-	gFile.Println("")
-	gFile.Println("func (enc *" + table.Name + "TableRowJsonDecoder) Decode(value []byte) (interface{}, error){")
-	gFile.Println("	res := &" + table.Name + "TableRow{}")
-	gFile.Println("	err := json.Unmarshal(value, res)")
-	gFile.Println("	if err != nil {")
-	gFile.Println("		panic(err)")
-	gFile.Println("	}")
-	gFile.Println("	return res, nil")
-	gFile.Println("}")
+	tableRowJsonDecoderString := `type %sTableRowJsonDecoder struct {}`
+	decodeString :=
+		`func (dec *%[1]sTableRowJsonDecoder) Decode(value []byte) (interface{}, error){
+			res := &%[1]sTableRow{}
+			err := json.Unmarshal(value, res)
+			if err != nil {
+				panic(err)
+			}
+			return res, nil
+		}`
+
+	gFile.Println(fmt.Sprintf(tableRowJsonDecoderString, table.Name))
+	gFile.Println(fmt.Sprintf(decodeString, table.Name))
 }

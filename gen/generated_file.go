@@ -15,13 +15,6 @@ func (f *GeneratedFile) Import(imp string) {
 	panic("Implemented me")
 }
 
-func (f *GeneratedFile) Printf(str string, args ...string) {
-	_, err := fmt.Fprintf(&f.buf, str, args)
-	if err != nil {
-		panic(err)
-	}
-}
-
 func (f *GeneratedFile) Println(str string) {
 	_, err := fmt.Fprintln(&f.buf, str)
 	if err != nil {
@@ -38,6 +31,7 @@ func (f *GeneratedFile) Print(str string) {
 
 func (f *GeneratedFile) Write(out io.Writer) {
 	// TODO Imports
+	//fmt.Println(string(f.buf.Bytes()))
 	bufBytes, err := format.Source(f.buf.Bytes())
 	if err != nil {
 		panic(err)
