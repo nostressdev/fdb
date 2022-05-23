@@ -22,6 +22,7 @@ func generateStructs(gFile *protogen.GeneratedFile, table *scheme.Table, models 
 func generateTableStruct(gFile *protogen.GeneratedFile, table *scheme.Table) {
 	gFile.P("type " + table.Name + "Table struct {")
 	gFile.P("	Enc lib.Encoder")
+	gFile.P("	Dec lib.Decoder")
 	gFile.P("	Sub subspace.Subspace")
 	gFile.P("}")
 	gFile.P()
@@ -31,12 +32,18 @@ func generateTableStruct(gFile *protogen.GeneratedFile, table *scheme.Table) {
 	gFile.P("		if opt.Enc != nil {")
 	gFile.P("			table.Enc = opt.Enc")
 	gFile.P("		}")
+	gFile.P("		if opt.Dec != nil {")
+	gFile.P("			table.Dec = opt.Dec")
+	gFile.P("		}")
 	gFile.P("		if opt.Sub != nil {")
 	gFile.P("			table.Sub = opt.Sub")
 	gFile.P("		}")
 	gFile.P("	}")
 	gFile.P("	if table.Enc == nil {")
 	gFile.P("		return nil, fmt.Errorf(\"encoder is nil\")")
+	gFile.P("	}")
+	gFile.P("	if table.Dec == nil {")
+	gFile.P("		return nil, fmt.Errorf(\"decoder is nil\")")
 	gFile.P("	}")
 	gFile.P("	if table.Sub == nil {")
 	gFile.P("		return nil, fmt.Errorf(\"subspace is nil\")")
@@ -70,7 +77,7 @@ func generateTableRowStruct(gFile *protogen.GeneratedFile, table *scheme.Table) 
 
 func generateFutureTableRowStruct(gFile *protogen.GeneratedFile, table *scheme.Table) {
 	gFile.P("type Future" + table.Name + "TableRow struct {")
-	gFile.P("	Enc lib.Encoder")
+	gFile.P("	Dec lib.Decoder")
 	gFile.P("	Future fdb.FutureByteSlice")
 	gFile.P("}")
 	gFile.P()
@@ -91,7 +98,7 @@ func generateTableMethods(gFile *protogen.GeneratedFile, table *scheme.Table, mo
 	gFile.P()
 	gFile.P("	fmt.Println(table.Sub.Sub(key...).Bytes())")
 	gFile.P("	future := tr.Get(table.Sub.Sub(key...))")
-	gFile.P("	return &Future" + table.Name + "TableRow{Future: future, Enc: table.Enc}, nil")
+	gFile.P("	return &Future" + table.Name + "TableRow{Future: future, Dec: table.Dec}, nil")
 	gFile.P("}")
 	gFile.P()
 
@@ -166,7 +173,7 @@ func getType(table *scheme.Table, models []*scheme.Model, q string) (string, err
 	qSlice := strings.Split(q, ".")        //делаем сплит
 	for _, column := range table.Columns { // ищем колонку по названию
 		if column.Name == qSlice[0] {
-			for _, model := range models { // ищем модель которая имеет название как наш тип
+			for _, model := range models { // ищем модель, которая имеет название как наш тип
 				if column.Type == model.Name {
 					for _, field := range model.Fields { // ищем поле
 						if field.Name == qSlice[1] {
@@ -232,7 +239,7 @@ func generateTablePKMethods(gFile *protogen.GeneratedFile, table *scheme.Table, 
 func generateFutureTableRowMethods(gFile *protogen.GeneratedFile, table *scheme.Table) {
 	funcNewTableRowString :=
 		`func (future *Future%[1]sTableRow) new%[1]sTableRow(value []byte) (*%[1]sTableRow, error) {
-			if row, err := future.Enc.Decode[%[1]sTableRow](value); err != nil {
+			if row, err := future.Dec.Decode(value); err != nil {
 				return nil, err
 			} else {
 				return row.(*%[1]sTableRow), nil

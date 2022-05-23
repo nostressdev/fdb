@@ -51,7 +51,7 @@ func GenFiles(config *scheme.GeneratorConfig) {
 		if err != nil {
 			panic(err)
 		}
-		f, err = os.Create(config.FilesPath + table.Name + "Table.g.go2")
+		f, err = os.Create(config.FilesPath + table.Name + "Table.g.go")
 		if err != nil {
 			panic(err)
 		}
