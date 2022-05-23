@@ -1,7 +1,6 @@
 package parser
 
 import (
-	"fmt"
 	"io/ioutil"
 	"strings"
 	"testing"
@@ -19,7 +18,7 @@ func TestParseYAML(t *testing.T) {
 	}{
 		{
 			name:     "simple test",
-			filename: "../../../test/simple.yaml",
+			filename: "testdata/simple.yaml",
 			want: FillValues(&scheme.GeneratorConfig{
 				Models: []*scheme.Model{
 					{
@@ -58,7 +57,7 @@ func TestParseYAML(t *testing.T) {
 		},
 		{
 			name:     "integer limits yaml test",
-			filename: "../../../test/integer-limits.yaml",
+			filename: "testdata/integer-limits.yaml",
 			want: FillValues(&scheme.GeneratorConfig{
 				Models: []*scheme.Model{
 					{
@@ -76,7 +75,7 @@ func TestParseYAML(t *testing.T) {
 		},
 		{
 			name:     "integer limits json test",
-			filename: "../../../test/integer-limits.json",
+			filename: "testdata/integer-limits.json",
 			want: FillValues(&scheme.GeneratorConfig{
 				Models: []*scheme.Model{
 					{
@@ -119,7 +118,7 @@ func TestParseYAMLWithErrors(t *testing.T) {
 	}{
 		{
 			name:     "models loop test",
-			filename: "../../../test/models-loop.yaml",
+			filename: "testdata/models-loop.yaml",
 		},
 	}
 	for _, tt := range tests {
@@ -134,7 +133,6 @@ func TestParseYAMLWithErrors(t *testing.T) {
 			if err == nil && fdbErrors.GetType(err) == fdbErrors.ValidationError {
 				t.Fatal("GetConfig() must return validation error")
 			}
-			fmt.Println(err.Error())
 		})
 	}
 }

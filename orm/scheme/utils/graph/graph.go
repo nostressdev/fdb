@@ -10,13 +10,13 @@ const (
 
 type Graph struct {
 	nodes         map[string]bool
-	adjucencyList map[string][]string
+	adjacencyList map[string][]string
 }
 
 func New() *Graph {
 	return &Graph{
 		nodes:         make(map[string]bool),
-		adjucencyList: make(map[string][]string),
+		adjacencyList: make(map[string][]string),
 	}
 }
 
@@ -25,7 +25,7 @@ func (g *Graph) AddNode(node string) {
 }
 
 func (g *Graph) AddEdge(from, to string) {
-	g.adjucencyList[from] = append(g.adjucencyList[from], to)
+	g.adjacencyList[from] = append(g.adjacencyList[from], to)
 }
 
 func (g *Graph) IsCyclic() (bool, []string) {
@@ -43,7 +43,7 @@ func (g *Graph) IsCyclic() (bool, []string) {
 func (g *Graph) isCyclic(node string, visited map[string]VisitedType, path []string) ([]string, bool) {
 	visited[node] = Entered
 	path = append(path, node)
-	for _, to := range g.adjucencyList[node] {
+	for _, to := range g.adjacencyList[node] {
 		if visited[to] == 1 {
 			begin := len(path) - 1
 			path = append(path, to)

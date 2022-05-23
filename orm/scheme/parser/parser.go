@@ -23,12 +23,14 @@ func (p *Parser) addDecoder(d decoder) {
 	p.Decoders = append(p.Decoders, d)
 }
 
-func (p *Parser) AddJSON(reader io.Reader) {
+func (p *Parser) AddJSON(reader io.Reader) *Parser {
 	p.addDecoder(json.NewDecoder(reader))
+	return p
 }
 
-func (p *Parser) AddYAML(reader io.Reader) {
+func (p *Parser) AddYAML(reader io.Reader) *Parser {
 	p.addDecoder(yaml.NewDecoder(reader))
+	return p
 }
 
 func (p *Parser) init() []*scheme.GeneratorConfig {
