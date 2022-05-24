@@ -91,6 +91,33 @@ func TestParseYAML(t *testing.T) {
 				Tables: []*scheme.Table{},
 			}),
 		},
+		{
+			name:     "default values in columns taken from model",
+			filename: "testdata/default-values.yaml",
+			want: FillValues(&scheme.GeneratorConfig{
+				Models: []*scheme.Model{
+					{
+						Name: "user",
+						Fields: []*scheme.Field{
+							{Name: "name", Type: "string", DefaultValue: "Ivan"},
+							{Name: "surname", Type: "string", DefaultValue: "Ivanov"},
+						},
+					},
+				},
+				Tables: []*scheme.Table{
+					{
+						Name: "users",
+						Columns: []*scheme.Column{
+							{Name: "user", Type: "@user", DefaultValue: map[string]interface{}{
+								"name":    "Petya",
+								"surname": "Ivanov",
+							}},
+						},
+						PK: []string{"user"},
+					},
+				},
+			}),
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

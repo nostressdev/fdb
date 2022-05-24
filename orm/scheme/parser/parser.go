@@ -118,6 +118,11 @@ func (p *Parser) parseModelValues(fieldsMap map[string]interface{}, model *schem
 		}
 		fieldsMap[name] = p.parseField(value, modelFieldNames[name].Type)
 	}
+	for _, field := range model.Fields {
+		if fieldsMap[field.Name] == nil {
+			fieldsMap[field.Name] = field.DefaultValue
+		}
+	}
 	return fieldsMap
 }
 
