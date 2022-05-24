@@ -31,7 +31,7 @@ func (g *Graph) AddEdge(from, to string) {
 func (g *Graph) IsCyclic() (bool, []string) {
 	visited := make(map[string]VisitedType)
 	for node := range g.nodes {
-		if visited[node] == 0 {
+		if visited[node] == NotVisited {
 			if path, ok := g.isCyclic(node, visited, nil); ok {
 				return true, path
 			}
@@ -44,14 +44,14 @@ func (g *Graph) isCyclic(node string, visited map[string]VisitedType, path []str
 	visited[node] = Entered
 	path = append(path, node)
 	for _, to := range g.adjacencyList[node] {
-		if visited[to] == 1 {
+		if visited[to] == Entered {
 			begin := len(path) - 1
 			path = append(path, to)
 			for path[begin] != to {
 				begin -= 1
 			}
 			return path[begin:], true
-		} else if visited[to] == 0 {
+		} else if visited[to] == NotVisited {
 			if path, ok := g.isCyclic(to, visited, path); ok {
 				return path, true
 			}

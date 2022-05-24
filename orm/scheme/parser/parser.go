@@ -116,8 +116,7 @@ func (p *Parser) parseModelValues(fieldsMap map[string]interface{}, model *schem
 		if _, ok := modelFieldNames[name]; !ok {
 			panic(errors.ParsingError.Newf("model %s: field %s is not defined", model.Name, name))
 		}
-		value := p.parseField(value, modelFieldNames[name].Type)
-		fieldsMap[name] = value
+		fieldsMap[name] = p.parseField(value, modelFieldNames[name].Type)
 	}
 	return fieldsMap
 }
