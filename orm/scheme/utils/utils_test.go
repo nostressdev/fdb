@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/nostressdev/fdb/errors"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestValidate(t *testing.T) {
@@ -37,13 +38,16 @@ func TestValidate(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			defer func() {
 				if r := recover(); r != nil {
-					if tt.wantPanic && errors.GetType(r.(error)) == errors.ValidationError {
-						return
+					if errors.GetType(r.(error)) != errors.ValidationError {
+						t.Fatalf("Validate() panic is not validation error")
 					}
-					t.Fatalf("Validate() panic = %v, wantPanic %v", r, tt.wantPanic)
 				}
 			}()
-			Validate(tt.args.expression, tt.args.text)
+			if !tt.wantPanic {
+				assert.NotPanics(t, func() { Validate(tt.args.expression, tt.args.text) }, "Validate() should not panic")
+			} else {
+				Validate(tt.args.expression, tt.args.text)
+			}
 		})
 	}
 }
@@ -82,13 +86,16 @@ func TestValidatef(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			defer func() {
 				if r := recover(); r != nil {
-					if tt.wantPanic && errors.GetType(r.(error)) == errors.ValidationError {
-						return
+					if errors.GetType(r.(error)) != errors.ValidationError {
+						t.Fatalf("Validate() panic is not validation error")
 					}
-					t.Fatalf("Validate() panic = %v, wantPanic %v", r, tt.wantPanic)
 				}
 			}()
-			Validatef(tt.args.expression, tt.args.format, tt.args.args...)
+			if !tt.wantPanic {
+				assert.NotPanics(t, func() { Validatef(tt.args.expression, tt.args.format, tt.args.args...) }, "Validate() should not panic")
+			} else {
+				Validatef(tt.args.expression, tt.args.format, tt.args.args...)
+			}
 		})
 	}
 }

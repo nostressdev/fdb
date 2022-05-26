@@ -1,6 +1,10 @@
 package scheme
 
-import "testing"
+import (
+	"testing"
+
+	"github.com/stretchr/testify/assert"
+)
 
 func TestColumn_validate(t *testing.T) {
 	type fields struct {
@@ -40,24 +44,20 @@ func TestColumn_validate(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			defer func() {
-				if r := recover(); r != nil {
-					if !tt.wantErr {
-						t.Fatalf("panic: %v", r)
-					}
-					return
+			f := func() {
+				column := &Column{
+					Name:         tt.fields.Name,
+					Type:         tt.fields.Type,
+					DefaultValue: tt.fields.DefaultValue,
+					Table:        tt.fields.Table,
 				}
-				if tt.wantErr {
-					t.Fatalf("want error, but no error")
-				}
-			}()
-			column := &Column{
-				Name:         tt.fields.Name,
-				Type:         tt.fields.Type,
-				DefaultValue: tt.fields.DefaultValue,
-				Table:        tt.fields.Table,
+				column.validate()
 			}
-			column.validate()
+			if tt.wantErr {
+				assert.Panics(t, f, "validate() should panic")
+			} else {
+				assert.NotPanics(t, f, "validate() should not panic")
+			}
 		})
 	}
 }

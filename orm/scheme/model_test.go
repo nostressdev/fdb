@@ -1,6 +1,10 @@
 package scheme
 
-import "testing"
+import (
+	"testing"
+
+	"github.com/stretchr/testify/assert"
+)
 
 func TestModel_validate(t *testing.T) {
 	type fields struct {
@@ -63,22 +67,18 @@ func TestModel_validate(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			defer func() {
-				if r := recover(); r != nil {
-					if !tt.wantErr {
-						t.Fatalf("panic: %v", r)
-					}
-					return
+			f := func() {
+				model := &Model{
+					Name:   tt.fields.Name,
+					Fields: tt.fields.Fields,
 				}
-				if tt.wantErr {
-					t.Fatalf("want error, but no error")
-				}
-			}()
-			model := &Model{
-				Name:   tt.fields.Name,
-				Fields: tt.fields.Fields,
+				model.validate()
 			}
-			model.validate()
+			if tt.wantErr {
+				assert.Panics(t, f, "validate() should panic")
+			} else {
+				assert.NotPanics(t, f, "validate() should not panic")
+			}
 		})
 	}
 }

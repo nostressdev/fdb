@@ -1,6 +1,10 @@
 package scheme
 
-import "testing"
+import (
+	"testing"
+
+	"github.com/stretchr/testify/assert"
+)
 
 func TestGeneratorConfig_Validate(t *testing.T) {
 	type fields struct {
@@ -79,8 +83,10 @@ func TestGeneratorConfig_Validate(t *testing.T) {
 				Models: tt.fields.Models,
 				Tables: tt.fields.Tables,
 			}
-			if err := c.Validate(); (err != nil) != tt.wantErr {
-				t.Errorf("GeneratorConfig.Validate() error = %v, wantErr %v", err, tt.wantErr)
+			if tt.wantErr {
+				assert.Error(t, c.Validate(), "Validate() should return an error")
+			} else {
+				assert.NoError(t, c.Validate(), "Validate() should not return an error")
 			}
 		})
 	}

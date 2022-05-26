@@ -1,6 +1,10 @@
 package scheme
 
-import "testing"
+import (
+	"testing"
+
+	"github.com/stretchr/testify/assert"
+)
 
 func TestRangeIndex_validate(t *testing.T) {
 	table := &Table{
@@ -99,24 +103,20 @@ func TestRangeIndex_validate(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			defer func() {
-				if r := recover(); r != nil {
-					if !tt.wantErr {
-						t.Fatalf("panic: %v", r)
-					}
-					return
+			f := func() {
+				index := &RangeIndex{
+					Name:    tt.fields.Name,
+					IK:      tt.fields.IK,
+					Columns: tt.fields.Columns,
+					Table:   tt.fields.Table,
 				}
-				if tt.wantErr {
-					t.Fatalf("want error, but no error")
-				}
-			}()
-			index := &RangeIndex{
-				Name:    tt.fields.Name,
-				IK:      tt.fields.IK,
-				Columns: tt.fields.Columns,
-				Table:   tt.fields.Table,
+				index.validate()
 			}
-			index.validate()
+			if tt.wantErr {
+				assert.Panics(t, f, "validate() should panic")
+			} else {
+				assert.NotPanics(t, f, "validate() should not panic")
+			}
 		})
 	}
 }
