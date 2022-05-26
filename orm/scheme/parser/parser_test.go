@@ -47,7 +47,7 @@ func TestParseYAML(t *testing.T) {
 						Columns: []*scheme.Column{
 							{Name: "id", Type: "string", DefaultValue: "column-default-id"},
 							{Name: "age", Type: "uint32", DefaultValue: uint32(20)},
-							{Name: "user", Type: "@user"},
+							{Name: "user", Type: "@user", DefaultValue: map[string]any{"id": string("field-default-id"), "name": string("field-default-name")}},
 						},
 						PK: []string{"id"},
 					},

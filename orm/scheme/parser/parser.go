@@ -57,7 +57,7 @@ func (p *Parser) init() []*scheme.GeneratorConfig {
 
 func (p *Parser) parseField(value interface{}, fieldType string) interface{} {
 	if value == nil {
-		return nil
+		return p.getDefaultValueFromType(fieldType)
 	}
 	// While parsing default values we don't have exact type of field,
 	// only `interface{}`, so we need to check it here.
@@ -103,6 +103,35 @@ func (p *Parser) parseField(value interface{}, fieldType string) interface{} {
 			return p.parseModelValues(structMap, model)
 		}
 		panic(errors.ParsingError.Newf("model %s: field %s is not a map", fieldType, value))
+	}
+	panic(errors.ParsingError.Newf("unknown type %s", fieldType))
+}
+
+func (p *Parser) getDefaultValueFromType(fieldType string) interface{} {
+	switch fieldType {
+	case "int32":
+		return int32(0)
+	case "int64":
+		return int64(0)
+	case "uint32":
+		return uint32(0)
+	case "uint64":
+		return uint64(0)
+	case "string":
+		return ""
+	case "bool":
+		return false
+	case "float":
+		return float32(0)
+	case "double":
+		return float64(0)
+	}
+	if model, ok := p.Models[fieldType[1:]]; ok && strings.HasPrefix(fieldType, "@") {
+		fieldValues := make(map[string]interface{})
+		for _, field := range model.Fields {
+			fieldValues[field.Name] = field.DefaultValue
+		}
+		return fieldValues
 	}
 	panic(errors.ParsingError.Newf("unknown type %s", fieldType))
 }
