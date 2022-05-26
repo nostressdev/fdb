@@ -1,8 +1,7 @@
 package parser
 
 import (
-	"io/ioutil"
-	"strings"
+	"os"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -121,12 +120,12 @@ func TestParseYAML(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			text, err := ioutil.ReadFile(tt.filename)
+			reader, err := os.Open(tt.filename)
 			if err != nil {
 				t.Fatalf("unable to read file %s: %v", tt.filename, err)
 			}
 			parser := New()
-			parser.AddYAML(strings.NewReader(string(text)))
+			parser.AddYAML(reader)
 			got, err := parser.Parse()
 			if err != nil {
 				t.Fatalf("Parse() error = %v", err)
@@ -150,12 +149,12 @@ func TestParseYAMLWithErrors(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			text, err := ioutil.ReadFile(tt.filename)
+			reader, err := os.Open(tt.filename)
 			if err != nil {
 				t.Fatalf("unable to read file %s: %v", tt.filename, err)
 			}
 			parser := New()
-			parser.AddYAML(strings.NewReader(string(text)))
+			parser.AddYAML(reader)
 			_, err = parser.Parse()
 			if err == nil && fdbErrors.GetType(err) == fdbErrors.ValidationError {
 				t.Fatal("GetConfig() must return validation error")
