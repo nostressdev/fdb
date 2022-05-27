@@ -68,6 +68,6 @@ func (c *GeneratorConfig) Validate() (err error) {
 	}()
 	c.validateModels()
 	c.validateTables()
-
+	c.checkCycles()
 	return
 }
