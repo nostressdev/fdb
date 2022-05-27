@@ -7,6 +7,8 @@ import (
 
 	"github.com/nostressdev/fdb/errors"
 	"github.com/nostressdev/fdb/orm/scheme"
+	"github.com/nostressdev/fdb/orm/scheme/utils"
+	"github.com/nostressdev/fdb/orm/scheme/utils/graph"
 	"gopkg.in/yaml.v2"
 )
 
@@ -45,6 +47,9 @@ func (p *Parser) init() []*scheme.GeneratorConfig {
 		configs = append(configs, config)
 		for i := range config.Models {
 			model := config.Models[i]
+			if model == nil {
+				panic(errors.ParsingError.Newf("model is not defined"))
+			}
 			if modelsSet[model.Name] {
 				panic(errors.ParsingError.Newf("model %s: duplicated model name", model.Name))
 			}
@@ -55,10 +60,13 @@ func (p *Parser) init() []*scheme.GeneratorConfig {
 	return configs
 }
 
-func (p *Parser) parseField(value interface{}, fieldType string) interface{} {
-	if value == nil {
-		return p.getDefaultValueFromType(fieldType)
-	}
+func (p *Parser) switchValue(value interface{}, fieldType string) interface{} {
+	defer func() {
+		if r := recover(); r != nil {
+			panic(errors.ParsingError.Newf("cannot parse value %s to type %s", value, fieldType))
+		}
+	}()
+
 	// While parsing default values we don't have exact type of field,
 	// only `interface{}`, so we need to check it here.
 	// gopkg.in/yaml.v2 and encoding/json Unmarshall interpret all integer values
@@ -92,12 +100,29 @@ func (p *Parser) parseField(value interface{}, fieldType string) interface{} {
 	case "double":
 		return value.(float64)
 	}
+	return nil
+}
+
+func (p *Parser) parseField(value interface{}, fieldType string) interface{} {
+	if value == nil {
+		return p.getDefaultValueFromType(fieldType)
+	}
+	res := p.switchValue(value, fieldType)
+	if res != nil {
+		return res
+	}
+	if len(fieldType) <= 1 {
+		panic(errors.ParsingError.Newf("unknown type %s", fieldType))
+	}
 	if model, ok := p.Models[fieldType[1:]]; ok && strings.HasPrefix(fieldType, "@") {
 		if structMap, ok := value.(map[string]interface{}); ok {
 			return p.parseModelValues(structMap, model)
 		} else if structInterfaceMap, ok := value.(map[interface{}]interface{}); ok {
 			structMap := make(map[string]interface{})
 			for k := range structInterfaceMap {
+				if _, ok := k.(string); !ok {
+					panic(errors.ParsingError.Newf("model %s: field %s is not defined", model.Name, k))
+				}
 				structMap[k.(string)] = structInterfaceMap[k]
 			}
 			return p.parseModelValues(structMap, model)
@@ -126,9 +151,15 @@ func (p *Parser) getDefaultValueFromType(fieldType string) interface{} {
 	case "double":
 		return float64(0)
 	}
+	if len(fieldType) <= 1 {
+		panic(errors.ParsingError.Newf("unknown type %s", fieldType))
+	}
 	if model, ok := p.Models[fieldType[1:]]; ok && strings.HasPrefix(fieldType, "@") {
 		fieldValues := make(map[string]interface{})
 		for _, field := range model.Fields {
+			if field == nil {
+				panic(errors.ParsingError.Newf("model %s: field is not defined", model.Name))
+			}
 			fieldValues[field.Name] = field.DefaultValue
 		}
 		return fieldValues
@@ -155,25 +186,80 @@ func (p *Parser) parseModelValues(fieldsMap map[string]interface{}, model *schem
 	return fieldsMap
 }
 
+func (p *Parser) parseModel(model *scheme.Model) {
+	for _, field := range model.Fields {
+		if field == nil {
+			panic(errors.ParsingError.Newf("model %s: field is not defined", model.Name))
+		}
+		field.DefaultValue = p.parseField(field.DefaultValue, field.Type)
+	}
+}
+
 func (p *Parser) parseModels(models []*scheme.Model) {
 	for _, model := range models {
-		for _, field := range model.Fields {
-			field.DefaultValue = p.parseField(field.DefaultValue, field.Type)
-		}
+		p.parseModel(model)
 	}
 }
 
 func (p *Parser) parseTables(tables []*scheme.Table) {
 	for _, table := range tables {
+		if table == nil {
+			panic(errors.ParsingError.Newf("table is not defined"))
+		}
 		for _, column := range table.Columns {
+			if column == nil {
+				panic(errors.ParsingError.Newf("table %s: column is not defined", table.Name))
+			}
 			column.DefaultValue = p.parseField(column.DefaultValue, column.Type)
 		}
 	}
 }
 
 func (p *Parser) parseValues(config *scheme.GeneratorConfig) {
-	p.parseModels(config.Models)
+	// p.parseModels(config.Models)
 	p.parseTables(config.Tables)
+}
+
+func (p *Parser) validateModelTypes() {
+	for _, model := range p.Models {
+		for _, field := range model.Fields {
+			if field == nil {
+				panic(errors.ParsingError.Newf("model %s: field is not defined", model.Name))
+			}
+			if field.Type == "" {
+				panic(errors.ParsingError.Newf("model %s: field %s has no type", model.Name, field.Name))
+			}
+			if !scheme.Primitives[field.Type] &&
+				(!strings.HasPrefix(field.Type, "@") || len(field.Type) < 1 ||
+					p.Models[field.Type[1:]] == nil) {
+				panic(errors.ParsingError.Newf("model %s: field %s has unknown type %s", model.Name, field.Name, field.Type))
+			}
+		}
+	}
+}
+
+func (p *Parser) getModelsOrder() []string {
+	p.validateModelTypes()
+	graph := graph.New()
+	for _, model := range p.Models {
+		graph.AddNode(model.Name)
+		for _, field := range model.Fields {
+			if scheme.Primitives[field.Type] {
+				continue
+			}
+			graph.AddEdge(model.Name, field.Type[1:])
+		}
+	}
+	order, ok := graph.TopSort()
+	if !ok {
+		hasCycle, cycle := graph.IsCyclic()
+		if hasCycle {
+			utils.Validatef(ok, "models cycle detected: %s", strings.Join(cycle, " -> "))
+		} else {
+			panic(errors.InternalError.New("unknown graph error"))
+		}
+	}
+	return order
 }
 
 func (p *Parser) Parse() (config *scheme.GeneratorConfig, err error) {
@@ -191,10 +277,15 @@ func (p *Parser) Parse() (config *scheme.GeneratorConfig, err error) {
 		}
 	}()
 	configs := p.init()
+	order := p.getModelsOrder()
+	for _, name := range order {
+		model := p.Models[name]
+		p.parseModel(model)
+	}
 	models := make([]*scheme.Model, 0)
 	tables := make([]*scheme.Table, 0)
 	for _, config := range configs {
-		p.parseValues(config)
+		p.parseTables(config.Tables)
 		models = append(models, config.Models...)
 		tables = append(tables, config.Tables...)
 	}

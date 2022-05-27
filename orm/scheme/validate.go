@@ -8,7 +8,7 @@ import (
 	"github.com/nostressdev/fdb/orm/scheme/utils/graph"
 )
 
-var primitives = map[string]bool{
+var Primitives = map[string]bool{
 	"int32":  true,
 	"int64":  true,
 	"uint32": true,
@@ -42,7 +42,7 @@ func (c *GeneratorConfig) checkCycles() {
 	for _, model := range c.Models {
 		graph.AddNode(model.Name)
 		for _, field := range model.Fields {
-			if primitives[field.Type] {
+			if Primitives[field.Type] {
 				continue
 			}
 			graph.AddEdge(model.Name, field.Type[1:])
@@ -68,6 +68,6 @@ func (c *GeneratorConfig) Validate() (err error) {
 	}()
 	c.validateModels()
 	c.validateTables()
-	c.checkCycles()
+
 	return
 }

@@ -1,0 +1,2 @@
+go test fuzz v1
+string("models:\n  - fields:\n      - type: \"@B\"\n  - name: \"B\"\n    fields:\n    -")

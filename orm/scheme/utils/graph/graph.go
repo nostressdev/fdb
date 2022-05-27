@@ -60,3 +60,34 @@ func (g *Graph) isCyclic(node string, visited map[string]VisitedType, path []str
 	visited[node] = Exited
 	return nil, false
 }
+
+func (g *Graph) TopSort() ([]string, bool) {
+	visited := make(map[string]VisitedType)
+	var topsort []string
+	var ok bool
+	for node := range g.nodes {
+		if visited[node] == NotVisited {
+			if topsort, ok = g.topSort(node, visited, topsort); !ok {
+				return nil, false
+			}
+		}
+	}
+	return topsort, true
+}
+
+func (g *Graph) topSort(node string, visited map[string]VisitedType, topsort []string) ([]string, bool) {
+	visited[node] = Entered
+	for _, to := range g.adjacencyList[node] {
+		if visited[to] == NotVisited {
+			var ok bool
+			if topsort, ok = g.topSort(to, visited, topsort); !ok {
+				return nil, true
+			}
+		} else if visited[to] == Entered {
+			return nil, false
+		}
+	}
+	visited[node] = Exited
+	topsort = append(topsort, node)
+	return topsort, true
+}

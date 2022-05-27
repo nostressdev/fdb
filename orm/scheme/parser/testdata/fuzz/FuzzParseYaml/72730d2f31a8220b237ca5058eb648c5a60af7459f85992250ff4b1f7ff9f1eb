@@ -1,0 +1,2 @@
+go test fuzz v1
+string("models:\n  - fields:\n      - 0000:0000000000000: 0000000\n        default-value:\n        -\n        type: \"string\"")
