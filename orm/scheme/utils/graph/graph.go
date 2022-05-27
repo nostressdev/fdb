@@ -81,7 +81,7 @@ func (g *Graph) topSort(node string, visited map[string]VisitedType, topsort []s
 		if visited[to] == NotVisited {
 			var ok bool
 			if topsort, ok = g.topSort(to, visited, topsort); !ok {
-				return nil, true
+				return nil, false
 			}
 		} else if visited[to] == Entered {
 			return nil, false

@@ -1,10 +1,11 @@
 package graph
 
 import (
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 	"reflect"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 type edge struct {
@@ -76,7 +77,7 @@ func TestGraph_IsCyclic(t *testing.T) {
 		},
 
 		{
-			name: "cycle",
+			name: "no cycle",
 			fields: fields{
 				nodes: []string{"a", "b", "c", "d", "e"},
 				adjacencyList: []edge{
@@ -117,6 +118,78 @@ func TestGraph_IsCyclic(t *testing.T) {
 					}
 				} else {
 					assert.Nil(t, path, "np cycle path must be empty")
+				}
+			}
+		})
+	}
+}
+
+func TestGraph_TopSort(t *testing.T) {
+	type fields struct {
+		nodes         []string
+		adjacencyList []edge
+	}
+	tests := []struct {
+		name     string
+		fields   fields
+		hasCycle bool
+	}{
+		{
+			name: "one variant",
+			fields: fields{
+				nodes: []string{"a", "b", "c"},
+				adjacencyList: []edge{
+					{"a", "b"},
+					{"b", "c"},
+					{"a", "c"},
+				},
+			},
+			hasCycle: false,
+		},
+		{
+			name: "many variants",
+			fields: fields{
+				nodes: []string{"a", "b", "c", "d", "e"},
+				adjacencyList: []edge{
+					{"a", "b"},
+					{"b", "c"},
+					{"a", "c"},
+					{"d", "e"},
+				},
+			},
+			hasCycle: false,
+		},
+		{
+			name: "cycle",
+			fields: fields{
+				nodes: []string{"a", "b", "c", "d", "e"},
+				adjacencyList: []edge{
+					{"a", "b"},
+					{"b", "c"},
+					{"c", "a"},
+				},
+			},
+			hasCycle: true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			g := New()
+			for _, node := range tt.fields.nodes {
+				g.AddNode(node)
+			}
+			for _, edge := range tt.fields.adjacencyList {
+				g.AddEdge(edge.from, edge.to)
+			}
+			topsort, ok := g.TopSort()
+			assert.Equal(t, !ok, tt.hasCycle, "cycle status mismatched")
+			if !tt.hasCycle {
+				nodesSet := make(map[string]bool)
+				for _, node := range topsort {
+					for _, to := range g.adjacencyList[node] {
+						require.Equal(t, true, nodesSet[to], "graph is not topsorted: %s -> %s", node, to)
+					}
+					nodesSet[node] = true
 				}
 			}
 		})
