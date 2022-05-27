@@ -305,6 +305,9 @@ func FillValues(config *scheme.GeneratorConfig) *scheme.GeneratorConfig {
 			table.ColumnsSet[column.Name] = true
 		}
 		for _, index := range table.RangeIndexes {
+			if index == nil {
+				panic(errors.ParsingError.Newf("table %s: range index is not defined", table.Name))
+			}
 			index.Table = table
 		}
 	}
