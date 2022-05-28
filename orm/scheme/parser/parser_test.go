@@ -7,6 +7,8 @@ import (
 	"github.com/google/go-cmp/cmp"
 	fdbErrors "github.com/nostressdev/fdb/errors"
 	"github.com/nostressdev/fdb/orm/scheme"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestParseYAML(t *testing.T) {
@@ -120,7 +122,7 @@ func TestParseYAML(t *testing.T) {
 		{
 			name:     "primitives",
 			filename: "testdata/primitives.yaml",
-			want:     FillValues(&scheme.GeneratorConfig{
+			want: FillValues(&scheme.GeneratorConfig{
 				Models: []*scheme.Model{
 					{
 						Name: "primitives",
@@ -151,15 +153,11 @@ func TestParseYAML(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			reader, err := os.Open(tt.filename)
-			if err != nil {
-				t.Fatalf("unable to read file %s: %v", tt.filename, err)
-			}
+			require.NoError(t, err)
 			parser := New()
 			parser.AddYAML(reader)
 			got, err := parser.Parse()
-			if err != nil {
-				t.Fatalf("Parse() error = %v", err)
-			}
+			require.NoError(t, err)
 			if diff := cmp.Diff(got, tt.want); diff != "" {
 				t.Fatalf("Parse() diff = %v", diff)
 			}
@@ -192,15 +190,11 @@ func TestParseYAMLWithErrors(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			reader, err := os.Open(tt.filename)
-			if err != nil {
-				t.Fatalf("unable to read file %s: %v", tt.filename, err)
-			}
+			require.NoError(t, err)
 			parser := New()
 			parser.AddYAML(reader)
 			_, err = parser.Parse()
-			if err == nil && fdbErrors.GetType(err) == tt.errType {
-				t.Fatal("Parse() must return validation error")
-			}
+			assert.Equal(t, tt.errType, fdbErrors.GetType(err))
 		})
 	}
 }

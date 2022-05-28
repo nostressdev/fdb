@@ -83,9 +83,7 @@ func TestGetType(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := GetType(tt.args); got != tt.want {
-				t.Errorf("GetType() = %v, want %v", got, tt.want)
-			}
+			assert.Equal(t, tt.want, GetType(tt.args))
 		})
 	}
 }
@@ -119,9 +117,7 @@ func TestErrorMessage(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if tt.args.Error() != tt.wantErr {
-				t.Errorf("Unwrap() error = %v, wantErr %v", tt.args.Error(), tt.wantErr)
-			}
+			assert.Equal(t, tt.wantErr, tt.args.Error())
 		})
 	}
 }
