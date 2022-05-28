@@ -1,0 +1,18 @@
+models:
+  - name: "user"
+    fields:
+      - name: "name"
+        type: "string"
+        default-value: "Ivan"
+      - name: "surname"
+        type: "string"
+        default-value: "Ivanov"
+tables:
+  - name: "users"
+    columns:
+      - name: "user"
+        type: "@user"
+        default-value:
+          name: "Petya"
+    pk: 
+      - "user"

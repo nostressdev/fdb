@@ -1,0 +1,9 @@
+models:
+  - name: "A"
+    fields: 
+      - name: "B"
+        type: "@B"
+  - name: "B"
+    fields: 
+      - name: "A"
+        type: "@A"

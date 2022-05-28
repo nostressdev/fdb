@@ -1,0 +1,40 @@
+models:
+  - name: "profile"
+    fields:
+      - name: "user"
+        type: "@user"
+        default-value:
+          id: "model-default-user-id"
+          name: "model-default-user-name"
+  - name: "user"
+    fields: 
+      - name: "id"
+        type: "string"
+        default-value: "field-default-id"
+      - name: "name"
+        type: "string"
+        default-value: "field-default-name"
+  - name: "external"
+    external-model: "filename.proto/MessageName"
+tables:
+  - name: "table"
+    storage-path: "table"
+    range-indexes:
+      - name: "age"
+        ik: 
+          - "age"
+        columns: 
+          - "age"
+          - "id"
+        async: true
+    columns:
+      - name: "id"
+        type: "string"
+        default-value: "column-default-id"
+      - name: "age"
+        type: "uint32"
+        default-value: 20
+      - name: "user"
+        type: "@user"
+    pk:
+      - "id"

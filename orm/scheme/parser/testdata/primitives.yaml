@@ -1,0 +1,47 @@
+models:
+  - name: "primitives"
+    fields: 
+      - name: "default-int32"
+        type: "int32"
+      - name: "int32"
+        type: "int32"
+        default-value: 1
+      - name: "default-int64"
+        type: "int64"
+      - name: "int64"
+        type: "int64"
+        default-value: 1
+      - name: "default-uint32"
+        type: "uint32"
+      - name: "uint32"
+        type: "uint32"
+        default-value: 1
+      - name: "default-uint64"
+        type: "uint64"
+      - name: "uint64"
+        type: "uint64"
+        default-value: 1
+      - name: "default-float32"
+        type: "float"
+      - name: "float32"
+        type: "float"
+        default-value: 1.0
+      - name: "default-float64"
+        type: "double"
+      - name: "float64"
+        type: "double"
+        default-value: 1.0
+      - name: "default-string"
+        type: "string"
+      - name: "string"
+        type: "string"
+        default-value: "abc"
+      - name: "default-bool"
+        type: "bool"
+      - name: "bool"
+        type: "bool"
+        default-value: true
+    
+
+  
+
