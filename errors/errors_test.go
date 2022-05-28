@@ -39,10 +39,7 @@ func TestErrorWrapping(t *testing.T) {
 			}
 			newErr = tt.args.Wrapf(err, "wrapped error %s...", "with format")
 			oldErr = Unwrap(newErr)
-			if oldErr.Error() != "wrapped error with format...: " + err.Error() {
-				t.Fatalf("error unwrapping error: got %q, want %q", oldErr.Error(), err.Error())
-			}
-			
+			assert.Equal(t, "wrapped error with format...: "+err.Error(), oldErr.Error())
 		})
 	}
 }
