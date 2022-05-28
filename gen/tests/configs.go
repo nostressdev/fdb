@@ -7,7 +7,7 @@ var Config = &scheme.GeneratorConfig{
 	PackageName: "gen_fdb",
 	Models: []*scheme.Model{{
 		Name: "User",
-		Fields: []scheme.Field{
+		Fields: []*scheme.Field{
 			{
 				Name: "ID",
 				Type: "string",
@@ -21,12 +21,12 @@ var Config = &scheme.GeneratorConfig{
 	Tables: []*scheme.Table{
 		{
 			Name:    "Users",
-			Columns: []scheme.Column{{Name: "Man", Type: "User"}, {Name: "Ts", Type: "uint64"}},
+			Columns: []*scheme.Column{{Name: "Man", Type: "User"}, {Name: "Ts", Type: "uint64"}},
 			PK:      []string{"Ts", "Man.ID"},
 		},
 		{
 			Name:    "AgeSort",
-			Columns: []scheme.Column{{Name: "Man", Type: "User"}},
+			Columns: []*scheme.Column{{Name: "Man", Type: "User"}},
 			PK:      []string{"Man.Age", "Man.ID"},
 		},
 	},

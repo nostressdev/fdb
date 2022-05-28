@@ -1,8 +1,10 @@
 package scheme
 
 type GeneratorConfig struct {
-	Models []*Model `yaml:"models"`
-	Tables []*Table `yaml:"tables"`
+	Models      []*Model `yaml:"models"`
+	Tables      []*Table `yaml:"tables"`
+	FilesPath   string
+	PackageName string
 }
 
 type Model struct {
