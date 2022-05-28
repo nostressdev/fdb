@@ -14,7 +14,7 @@ var Config = &scheme.GeneratorConfig{
 			},
 			{
 				Name: "Age",
-				Type: "uint64",
+				Type: "bool",
 			},
 		},
 	}},

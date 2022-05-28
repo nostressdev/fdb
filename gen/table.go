@@ -183,7 +183,7 @@ func getType(table *scheme.Table, models []*scheme.Model, q string) (string, err
 		return "", fmt.Errorf("don't find \"%s\" in table columns", q)
 	}
 
-	qSlice := strings.Split(q, ".")        //делаем сплит
+	qSlice := strings.Split(q, ".")        // делаем сплит
 	for _, column := range table.Columns { // ищем колонку по названию
 		if column.Name == qSlice[0] {
 			for _, model := range models { // ищем модель, которая имеет название как наш тип
@@ -203,6 +203,14 @@ func getType(table *scheme.Table, models []*scheme.Model, q string) (string, err
 }
 
 func generateTablePKMethods(gFile *GeneratedFile, table *scheme.Table, models []*scheme.Model) {
+	bufferPackString :=
+		`%[1]sBuf := new(bytes.Buffer)
+		err = binary.Write(%[1]sBuf, binary.BigEndian, pk.%[1]s)
+		if err != nil {
+			return nil, err
+		}
+		pk%[1]sBytes := %[1]sBuf.Bytes()`
+
 	gFile.Println("func (pk *" + table.Name + "TablePK) Pack() ([]tuple.TupleElement, error) {")
 	gFile.Println("	var err error")
 	elements := make([]string, 0, len(table.PK))
@@ -216,43 +224,47 @@ func generateTablePKMethods(gFile *GeneratedFile, table *scheme.Table, models []
 		case "string":
 			stringPackSting := `pk%[1]sBytes := []byte(pk.%[1]s)`
 			gFile.Println(fmt.Sprintf(stringPackSting, name))
-		case "uint64":
-			uint64PackString :=
-				`%[1]sBuf := new(bytes.Buffer)
-				err = binary.Write(%[1]sBuf, binary.BigEndian, pk.%[1]s)
-				if err != nil {
-					return nil, err
-				}
-				pk%[1]sBytes := %[1]sBuf.Bytes()`
-			gFile.Println(fmt.Sprintf(uint64PackString, name))
+		case "int32":
+			gFile.Println(fmt.Sprintf(bufferPackString, name))
+			gFile.Import("bytes")
+			gFile.Import("encoding/binary")
 		case "int64":
-			int64PackString :=
-				`%[1]sBuf := new(bytes.Buffer)
-				err = binary.Write(%[1]sBuf, binary.BigEndian, pk.%[1]s)
-				if err != nil {
-					return nil, err
-				}
-				pk%[1]sBytes := %[1]sBuf.Bytes()`
-			gFile.Println(fmt.Sprintf(int64PackString, name))
+			gFile.Println(fmt.Sprintf(bufferPackString, name))
+			gFile.Import("bytes")
+			gFile.Import("encoding/binary")
+		case "uint32":
+			gFile.Println(fmt.Sprintf(bufferPackString, name))
+			gFile.Import("bytes")
+			gFile.Import("encoding/binary")
+		case "uint64":
+			gFile.Println(fmt.Sprintf(bufferPackString, name))
+			gFile.Import("bytes")
+			gFile.Import("encoding/binary")
 		case "float32":
-			float32PackString :=
-				`%[1]sBuf := new(bytes.Buffer)
-				err = binary.Write(%[1]sBuf, binary.BigEndian, pk.%[1]s)
-				if err != nil {
-					return nil, err
-				}
-				pk%[1]sBytes := %[1]sBuf.Bytes()`
-			gFile.Println(fmt.Sprintf(float32PackString, name))
+			gFile.Println(fmt.Sprintf(bufferPackString, name))
+			gFile.Import("bytes")
+			gFile.Import("encoding/binary")
+		case "float64":
+			gFile.Println(fmt.Sprintf(bufferPackString, name))
+			gFile.Import("bytes")
+			gFile.Import("encoding/binary")
+		case "bool":
+			boolPackSting :=
+				`pk%[1]sBytes := []byte{0}
+				if (pk.%[1]s) {pk%[1]sBytes[0] = 1}`
+			gFile.Println(fmt.Sprintf(boolPackSting, name))
 		default:
 			panic("unknown type " + tp)
 		}
 		elements = append(elements, "pk"+name+"Bytes")
 	}
-	gFile.Println("	if err != nil {")
-	gFile.Println("		return nil, err")
-	gFile.Println("	}")
-	gFile.Println("	return []tuple.TupleElement{" + strings.Join(elements, ", ") + "}, nil")
-	gFile.Println("}")
+	endFuncPackString := `
+				if err != nil {
+					return nil, err
+				}
+				return []tuple.TupleElement{%s}, nil
+			}`
+	gFile.Println(fmt.Sprintf(endFuncPackString, strings.Join(elements, ", ")))
 }
 
 func generateFutureTableRowMethods(gFile *GeneratedFile, table *scheme.Table) {

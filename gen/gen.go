@@ -63,8 +63,6 @@ func GenModels(gFile *GeneratedFile, config *scheme.GeneratorConfig) {
 
 func GenTable(gFile *GeneratedFile, config *scheme.GeneratorConfig, index int) {
 	gFile.Println("package " + config.PackageName)
-	gFile.Import("bytes")
-	gFile.Import("encoding/binary")
 	gFile.Import("fmt")
 	gFile.Import("github.com/apple/foundationdb/bindings/go/src/fdb")
 	gFile.Import("github.com/apple/foundationdb/bindings/go/src/fdb/subspace")
