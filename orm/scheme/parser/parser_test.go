@@ -120,7 +120,7 @@ func TestParseYAML(t *testing.T) {
 		{
 			name:     "primitives",
 			filename: "testdata/primitives.yaml",
-			want: FillValues(&scheme.GeneratorConfig{
+			want:     FillValues(&scheme.GeneratorConfig{
 				Models: []*scheme.Model{
 					{
 						Name: "primitives",
@@ -132,7 +132,7 @@ func TestParseYAML(t *testing.T) {
 							{Name: "default-uint32", Type: "uint32", DefaultValue: uint32(0)},
 							{Name: "uint32", Type: "uint32", DefaultValue: uint32(1)},
 							{Name: "default-uint64", Type: "uint64", DefaultValue: uint64(0)},
-							{Name: "uint64", Type: "uint64", DefaultValue: uint64(9223372036854775807)},
+							{Name: "uint64", Type: "uint64", DefaultValue: uint64(1)},
 							{Name: "default-float32", Type: "float", DefaultValue: float32(0)},
 							{Name: "float32", Type: "float", DefaultValue: float32(1.0)},
 							{Name: "default-float64", Type: "double", DefaultValue: float64(0)},
