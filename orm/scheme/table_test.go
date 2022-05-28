@@ -11,6 +11,7 @@ func TestTable_validate(t *testing.T) {
 		Name    string
 		Columns []*Column
 		PK      []string
+		RangeIndexes []*RangeIndex
 	}
 	tests := []struct {
 		name    string
@@ -26,6 +27,7 @@ func TestTable_validate(t *testing.T) {
 						Type: "int32",
 					},
 				},
+				RangeIndexes: []*RangeIndex{},
 			},
 			wantErr: true,
 		},
@@ -33,6 +35,7 @@ func TestTable_validate(t *testing.T) {
 			name: "empty columns",
 			fields: fields{
 				Name: "name",
+				RangeIndexes: []*RangeIndex{},
 			},
 			wantErr: true,
 		},
@@ -46,8 +49,35 @@ func TestTable_validate(t *testing.T) {
 						Type: "int32",
 					},
 				},
+				RangeIndexes: []*RangeIndex{},
 			},
 			wantErr: true,
+		},
+		{
+			name: "range index duplicated",
+			fields: fields{
+				Name: "name",
+				Columns: []*Column{
+					{
+						Name: "A",
+						Type: "int32",
+					},
+				},
+				PK: []string{"A"},
+				RangeIndexes: []*RangeIndex{
+					{
+						Name: "IndexA",
+						IK:   []string{"A"},
+						Columns: []string{"A",},
+					},
+					{
+						Name: "IndexA",
+						IK:   []string{"A"},
+						Columns: []string{"A",},
+					},
+				},
+
+			},
 		},
 		{
 			name: "valid table",
@@ -68,6 +98,7 @@ func TestTable_validate(t *testing.T) {
 					},
 				},
 				PK: []string{"B", "C"},
+				RangeIndexes: []*RangeIndex{},
 			},
 			wantErr: false,
 		},
@@ -77,7 +108,7 @@ func TestTable_validate(t *testing.T) {
 			f := func() {
 				table := &Table{
 					Name:         tt.fields.Name,
-					RangeIndexes: []*RangeIndex{},
+					RangeIndexes: tt.fields.RangeIndexes,
 					Columns:      tt.fields.Columns,
 					PK:           tt.fields.PK,
 					ColumnsSet:   make(map[string]bool),
@@ -85,6 +116,9 @@ func TestTable_validate(t *testing.T) {
 				for _, c := range table.Columns {
 					table.ColumnsSet[c.Name] = true
 					c.Table = table
+				}
+				for _, i := range table.RangeIndexes {
+					i.Table = table
 				}
 				table.validate()
 			}

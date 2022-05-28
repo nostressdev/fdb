@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/pkg/errors"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestErrorWrapping(t *testing.T) {
@@ -36,8 +37,19 @@ func TestErrorWrapping(t *testing.T) {
 			if oldErr.Error() != "wrapped error: "+err.Error() {
 				t.Fatalf("error unwrapping error: got %q, want %q", oldErr.Error(), err.Error())
 			}
+			newErr = tt.args.Wrapf(err, "wrapped error %s...", "with format")
+			oldErr = Unwrap(newErr)
+			if oldErr.Error() != "wrapped error with format...: " + err.Error() {
+				t.Fatalf("error unwrapping error: got %q, want %q", oldErr.Error(), err.Error())
+			}
+			
 		})
 	}
+}
+
+func TestNotWrappedUnwrap(t *testing.T) {
+	err := errors.New("error")
+	assert.Equal(t, err, Unwrap(err))
 }
 
 func TestGetType(t *testing.T) {
@@ -113,6 +125,61 @@ func TestErrorMessage(t *testing.T) {
 			if tt.args.Error() != tt.wantErr {
 				t.Errorf("Unwrap() error = %v, wantErr %v", tt.args.Error(), tt.wantErr)
 			}
+		})
+	}
+}
+
+func TestErrorType_Newf(t *testing.T) {
+	type args struct {
+		format string
+		args   []interface{}
+	}
+	tests := []struct {
+		name     string
+		errType  ErrorType
+		args     args
+		expected string
+	}{
+		{
+			name:    "parsing error",
+			errType: ParsingError,
+			args: args{
+				format: "%s, %s;\n",
+				args:   []interface{}{"error", "error"},
+			},
+			expected: "parsing error: error, error;\n",
+		},
+		{
+			name:    "validation error",
+			errType: ValidationError,
+			args: args{
+				format: "%s, %s;\n",
+				args:   []interface{}{"error", "error"},
+			},
+			expected: "validation error: error, error;\n",
+		},
+		{
+			name:    "internal error",
+			errType: InternalError,
+			args: args{
+				format: "%s, %s;\n",
+				args:   []interface{}{"error", "error"},
+			},
+			expected: "internal error: error, error;\n (please report this error)",
+		},
+		{
+			name:    "no type error",
+			errType: NoType,
+			args: args{
+				format: "%s, %s;\n",
+				args:   []interface{}{"error", "error"},
+			},
+			expected: "error, error;\n",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			assert.Equal(t, tt.expected, tt.errType.Newf(tt.args.format, tt.args.args...).Error())
 		})
 	}
 }

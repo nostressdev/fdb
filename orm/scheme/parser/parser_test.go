@@ -117,6 +117,36 @@ func TestParseYAML(t *testing.T) {
 				},
 			}),
 		},
+		{
+			name:     "primitives",
+			filename: "testdata/primitives.yaml",
+			want: FillValues(&scheme.GeneratorConfig{
+				Models: []*scheme.Model{
+					{
+						Name: "primitives",
+						Fields: []*scheme.Field{
+							{Name: "default-int32", Type: "int32", DefaultValue: int32(0)},
+							{Name: "int32", Type: "int32", DefaultValue: int32(1)},
+							{Name: "default-int64", Type: "int64", DefaultValue: int64(0)},
+							{Name: "int64", Type: "int64", DefaultValue: int64(1)},
+							{Name: "default-uint32", Type: "uint32", DefaultValue: uint32(0)},
+							{Name: "uint32", Type: "uint32", DefaultValue: uint32(1)},
+							{Name: "default-uint64", Type: "uint64", DefaultValue: uint64(0)},
+							{Name: "uint64", Type: "uint64", DefaultValue: uint64(9223372036854775807)},
+							{Name: "default-float32", Type: "float", DefaultValue: float32(0)},
+							{Name: "float32", Type: "float", DefaultValue: float32(1.0)},
+							{Name: "default-float64", Type: "double", DefaultValue: float64(0)},
+							{Name: "float64", Type: "double", DefaultValue: float64(1.0)},
+							{Name: "default-string", Type: "string", DefaultValue: ""},
+							{Name: "string", Type: "string", DefaultValue: "abc"},
+							{Name: "default-bool", Type: "bool", DefaultValue: false},
+							{Name: "bool", Type: "bool", DefaultValue: true},
+						},
+					},
+				},
+				Tables: []*scheme.Table{},
+			}),
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -141,10 +171,22 @@ func TestParseYAMLWithErrors(t *testing.T) {
 	tests := []struct {
 		name     string
 		filename string
+		errType  fdbErrors.ErrorType
 	}{
 		{
 			name:     "models loop test",
 			filename: "testdata/models-loop.yaml",
+			errType:  fdbErrors.ValidationError,
+		},
+		{
+			name:     "invalid yaml",
+			filename: "testdata/invalid.yaml",
+			errType:  fdbErrors.ParsingError,
+		},
+		{
+			name:     "duplicated model names",
+			filename: "testdata/duplicated-model-names.yaml",
+			errType:  fdbErrors.ParsingError,
 		},
 	}
 	for _, tt := range tests {
@@ -156,8 +198,8 @@ func TestParseYAMLWithErrors(t *testing.T) {
 			parser := New()
 			parser.AddYAML(reader)
 			_, err = parser.Parse()
-			if err == nil && fdbErrors.GetType(err) == fdbErrors.ValidationError {
-				t.Fatal("GetConfig() must return validation error")
+			if err == nil && fdbErrors.GetType(err) == tt.errType {
+				t.Fatal("Parse() must return validation error")
 			}
 		})
 	}

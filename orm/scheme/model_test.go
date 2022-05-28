@@ -12,9 +12,10 @@ func TestModel_validate(t *testing.T) {
 		Fields []*Field
 	}
 	tests := []struct {
-		name    string
-		fields  fields
-		wantErr bool
+		name          string
+		fields        fields
+		externalModel string
+		wantErr       bool
 	}{
 		{
 			name: "empty name",
@@ -64,13 +65,18 @@ func TestModel_validate(t *testing.T) {
 			},
 			wantErr: true,
 		},
+		{
+			name:          "external model",
+			externalModel: "external",
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			f := func() {
 				model := &Model{
-					Name:   tt.fields.Name,
-					Fields: tt.fields.Fields,
+					Name:          tt.fields.Name,
+					Fields:        tt.fields.Fields,
+					ExternalModel: tt.externalModel,
 				}
 				model.validate()
 			}

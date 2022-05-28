@@ -90,7 +90,13 @@ func (p *Parser) switchValue(value interface{}, fieldType string) interface{} {
 			return uint32(val)
 		}
 	case "uint64":
-		return value.(uint64)
+		if val, ok := value.(int); ok {
+			return uint64(val)
+		} else if val, ok := value.(int64); ok {
+			return uint64(val)
+		} else if val, ok := value.(uint64); ok {
+			return val
+		}
 	case "string":
 		return value.(string)
 	case "bool":
@@ -195,12 +201,6 @@ func (p *Parser) parseModel(model *scheme.Model) {
 	}
 }
 
-func (p *Parser) parseModels(models []*scheme.Model) {
-	for _, model := range models {
-		p.parseModel(model)
-	}
-}
-
 func (p *Parser) parseTables(tables []*scheme.Table) {
 	for _, table := range tables {
 		if table == nil {
@@ -213,11 +213,6 @@ func (p *Parser) parseTables(tables []*scheme.Table) {
 			column.DefaultValue = p.parseField(column.DefaultValue, column.Type)
 		}
 	}
-}
-
-func (p *Parser) parseValues(config *scheme.GeneratorConfig) {
-	// p.parseModels(config.Models)
-	p.parseTables(config.Tables)
 }
 
 func (p *Parser) validateModelTypes() {

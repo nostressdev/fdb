@@ -61,6 +61,10 @@ func TestGeneratorConfig_Validate(t *testing.T) {
 								Name: "B",
 								Type: "@B",
 							},
+							{
+								Name: "C",
+								Type: "int32",
+							},
 						},
 					},
 					{
