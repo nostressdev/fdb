@@ -3,6 +3,7 @@ module github.com/nostressdev/fdb
 go 1.18
 
 require (
+	github.com/apple/foundationdb/bindings/go v0.0.0-20190311170436-f2d582ffa197
 	github.com/google/go-cmp v0.5.8
 	github.com/pkg/errors v0.9.1
 	github.com/stretchr/testify v1.7.1

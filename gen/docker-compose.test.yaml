@@ -1,0 +1,18 @@
+version: "3.3"
+services:
+
+  fdb:
+    image: foundationdb/foundationdb:6.3.22
+    environment:
+      FDB_COORDINATOR: fdb
+      FDB_NETWORKING_MODE: container
+
+  fdb-service:
+    build:
+      context: ..
+      dockerfile: gen/docker/Dockerfile
+    depends_on:
+      - fdb
+    environment:
+      - FDB_COORDINATOR=fdb
+    command: bash -c "gen/docker/docker-entrypoint.test.sh"
