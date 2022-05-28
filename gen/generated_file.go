@@ -27,6 +27,13 @@ func (f *GeneratedFile) Import(impPath string, impName ...string) {
 	}
 }
 
+func (f *GeneratedFile) Printf(str string, args ...any) {
+	_, err := fmt.Fprintln(&f.buf, fmt.Sprintf(str, args...))
+	if err != nil {
+		panic(err)
+	}
+}
+
 func (f *GeneratedFile) Println(str string) {
 	_, err := fmt.Fprintln(&f.buf, str)
 	if err != nil {

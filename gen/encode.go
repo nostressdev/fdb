@@ -1,7 +1,6 @@
 package gen
 
 import (
-	"fmt"
 	"github.com/nostressdev/fdb/orm/scheme"
 )
 
@@ -16,8 +15,8 @@ func GenerateEncoder(gFile *GeneratedFile, table *scheme.Table) {
 			return res, nil
 		}`
 
-	gFile.Println(fmt.Sprintf(tableRowJsonEncoderString, table.Name))
-	gFile.Println(fmt.Sprintf(encodeString, table.Name))
+	gFile.Printf(tableRowJsonEncoderString, table.Name)
+	gFile.Printf(encodeString, table.Name)
 }
 
 func GenerateDecoder(gFile *GeneratedFile, table *scheme.Table) {
@@ -32,6 +31,6 @@ func GenerateDecoder(gFile *GeneratedFile, table *scheme.Table) {
 			return res, nil
 		}`
 
-	gFile.Println(fmt.Sprintf(tableRowJsonDecoderString, table.Name))
-	gFile.Println(fmt.Sprintf(decodeString, table.Name))
+	gFile.Printf(tableRowJsonDecoderString, table.Name)
+	gFile.Printf(decodeString, table.Name)
 }

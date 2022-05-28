@@ -51,27 +51,27 @@ func generateTableStruct(gFile *GeneratedFile, table *scheme.Table) {
 			return table, nil
 		}`
 
-	gFile.Println(fmt.Sprintf(tableString, table.Name))
-	gFile.Println(fmt.Sprintf(newTableString, table.Name))
+	gFile.Printf(tableString, table.Name)
+	gFile.Printf(newTableString, table.Name)
 }
 
 func generateTablePKStruct(gFile *GeneratedFile, table *scheme.Table, models []*scheme.Model) {
-	gFile.Println(fmt.Sprintf("type %sTablePK struct {", table.Name))
+	gFile.Printf("type %sTablePK struct {", table.Name)
 	for _, column := range table.PK {
 		tp, err := getType(table, models, column)
 		if err != nil {
 			panic(err)
 		}
-		gFile.Println(fmt.Sprintf("	%s %s", strings.Join(strings.Split(column, "."), ""), tp))
+		gFile.Printf("	%s %s", strings.Join(strings.Split(column, "."), ""), tp)
 	}
 	gFile.Println("}")
 	gFile.Println("")
 }
 
 func generateTableRowStruct(gFile *GeneratedFile, table *scheme.Table) {
-	gFile.Println(fmt.Sprintf("type %sTableRow struct {", table.Name))
+	gFile.Printf("type %sTableRow struct {", table.Name)
 	for _, column := range table.Columns {
-		gFile.Println(fmt.Sprintf("	%s %s", column.Name, column.Type))
+		gFile.Printf("	%s %s", column.Name, column.Type)
 	}
 	gFile.Println("}")
 	gFile.Println("")
@@ -83,7 +83,7 @@ func generateFutureTableRowStruct(gFile *GeneratedFile, table *scheme.Table) {
 			Dec lib.Decoder
 			Future fdb.FutureByteSlice
 		}`
-	gFile.Println(fmt.Sprintf(futureTableRowString, table.Name))
+	gFile.Printf(futureTableRowString, table.Name)
 }
 
 func generateMethods(gFile *GeneratedFile, table *scheme.Table, models []*scheme.Model) {
@@ -103,7 +103,7 @@ func generateTableMethods(gFile *GeneratedFile, table *scheme.Table) {
 			future := tr.Get(table.Sub.Sub(key...))
 			return &Future%[1]sTableRow{Future: future, Dec: table.Dec}, nil
 		}`
-	gFile.Println(fmt.Sprintf(getString, table.Name))
+	gFile.Printf(getString, table.Name)
 
 	mustGetString :=
 		`func (table *%[1]sTable) MustGet(tr fdb.ReadTransaction, pk *%[1]sTablePK) *Future%[1]sTableRow {
@@ -113,7 +113,7 @@ func generateTableMethods(gFile *GeneratedFile, table *scheme.Table) {
 			}
 			return future
 		}`
-	gFile.Println(fmt.Sprintf(mustGetString, table.Name))
+	gFile.Printf(mustGetString, table.Name)
 
 	insertString :=
 		`func (table *%[1]sTable) Insert(tr fdb.Transaction, model *%[1]sTableRow) error {
@@ -131,7 +131,7 @@ func generateTableMethods(gFile *GeneratedFile, table *scheme.Table) {
 			return nil
 		}`
 
-	gFile.Println(fmt.Sprintf(insertString, table.Name, fillPK(table)))
+	gFile.Printf(insertString, table.Name, fillPK(table))
 
 	mustInsertString :=
 		`func (table *%[1]sTable) MustInsert(tr fdb.Transaction, model *%[1]sTableRow) {
@@ -140,7 +140,7 @@ func generateTableMethods(gFile *GeneratedFile, table *scheme.Table) {
 			panic(err)
 		}
 	}`
-	gFile.Println(fmt.Sprintf(mustInsertString, table.Name))
+	gFile.Printf(mustInsertString, table.Name)
 
 	deleteString :=
 		`func (table *%[1]sTable) Delete(tr fdb.Transaction, pk *%[1]sTablePK) error {
@@ -151,7 +151,7 @@ func generateTableMethods(gFile *GeneratedFile, table *scheme.Table) {
 			tr.Clear(table.Sub.Sub(key...))
 			return nil
 		}`
-	gFile.Println(fmt.Sprintf(deleteString, table.Name))
+	gFile.Printf(deleteString, table.Name)
 
 	mustDeleteString :=
 		`func (table *%[1]sTable) MustDelete(tr fdb.Transaction, pk *%[1]sTablePK) {
@@ -160,7 +160,7 @@ func generateTableMethods(gFile *GeneratedFile, table *scheme.Table) {
 			panic(err)
 		}
 	}`
-	gFile.Println(fmt.Sprintf(mustDeleteString, table.Name))
+	gFile.Printf(mustDeleteString, table.Name)
 }
 
 func fillPK(table *scheme.Table) string {
@@ -223,36 +223,36 @@ func generateTablePKMethods(gFile *GeneratedFile, table *scheme.Table, models []
 		switch tp {
 		case "string":
 			stringPackSting := `pk%[1]sBytes := []byte(pk.%[1]s)`
-			gFile.Println(fmt.Sprintf(stringPackSting, name))
+			gFile.Printf(stringPackSting, name)
 		case "int32":
-			gFile.Println(fmt.Sprintf(bufferPackString, name))
+			gFile.Printf(bufferPackString, name)
 			gFile.Import("bytes")
 			gFile.Import("encoding/binary")
 		case "int64":
-			gFile.Println(fmt.Sprintf(bufferPackString, name))
+			gFile.Printf(bufferPackString, name)
 			gFile.Import("bytes")
 			gFile.Import("encoding/binary")
 		case "uint32":
-			gFile.Println(fmt.Sprintf(bufferPackString, name))
+			gFile.Printf(bufferPackString, name)
 			gFile.Import("bytes")
 			gFile.Import("encoding/binary")
 		case "uint64":
-			gFile.Println(fmt.Sprintf(bufferPackString, name))
+			gFile.Printf(bufferPackString, name)
 			gFile.Import("bytes")
 			gFile.Import("encoding/binary")
 		case "float32":
-			gFile.Println(fmt.Sprintf(bufferPackString, name))
+			gFile.Printf(bufferPackString, name)
 			gFile.Import("bytes")
 			gFile.Import("encoding/binary")
 		case "float64":
-			gFile.Println(fmt.Sprintf(bufferPackString, name))
+			gFile.Printf(bufferPackString, name)
 			gFile.Import("bytes")
 			gFile.Import("encoding/binary")
 		case "bool":
 			boolPackSting :=
 				`pk%[1]sBytes := []byte{0}
 				if (pk.%[1]s) {pk%[1]sBytes[0] = 1}`
-			gFile.Println(fmt.Sprintf(boolPackSting, name))
+			gFile.Printf(boolPackSting, name)
 		default:
 			panic("unknown type " + tp)
 		}
@@ -264,7 +264,7 @@ func generateTablePKMethods(gFile *GeneratedFile, table *scheme.Table, models []
 				}
 				return []tuple.TupleElement{%s}, nil
 			}`
-	gFile.Println(fmt.Sprintf(endFuncPackString, strings.Join(elements, ", ")))
+	gFile.Printf(endFuncPackString, strings.Join(elements, ", "))
 }
 
 func generateFutureTableRowMethods(gFile *GeneratedFile, table *scheme.Table) {
@@ -276,7 +276,7 @@ func generateFutureTableRowMethods(gFile *GeneratedFile, table *scheme.Table) {
 				return row.(*%[1]sTableRow), nil
 			}
 		}`
-	gFile.Println(fmt.Sprintf(funcNewTableRowString, table.Name))
+	gFile.Printf(funcNewTableRowString, table.Name)
 
 	funcGetString :=
 		`func (future *Future%[1]sTableRow) Get() (*%[1]sTableRow, error) {
@@ -289,7 +289,7 @@ func generateFutureTableRowMethods(gFile *GeneratedFile, table *scheme.Table) {
 		}
 		return future.new%[1]sTableRow(value)
 	}`
-	gFile.Println(fmt.Sprintf(funcGetString, table.Name))
+	gFile.Printf(funcGetString, table.Name)
 
 	funcMustGetString :=
 		`func (future *Future%[1]sTableRow) MustGet() *%[1]sTableRow {
@@ -299,5 +299,5 @@ func generateFutureTableRowMethods(gFile *GeneratedFile, table *scheme.Table) {
 		}
 		return value
 	}`
-	gFile.Println(fmt.Sprintf(funcMustGetString, table.Name))
+	gFile.Printf(funcMustGetString, table.Name)
 }
