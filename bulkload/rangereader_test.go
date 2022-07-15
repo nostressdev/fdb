@@ -32,7 +32,8 @@ func Test_RangeReader(t *testing.T) {
 
 	t.Run("test", func(t *testing.T) {
 		cnt := 0
-		require.NoError(t, New[fdb.KeyValue](db, Reader[fdb.KeyValue](NewRangeReader(db, sub, RangeReaderWithBatchSize(10000))), func(tr fdb.Transaction, value fdb.KeyValue) error {
+		begin, end := sub.FDBRangeKeys()
+		require.NoError(t, New[fdb.KeyValue](db, Reader[fdb.KeyValue](NewRangeReader(db, fdb.KeyRange{Begin: begin, End: end}, RangeReaderWithBatchSize(10000))), func(tr fdb.Transaction, value fdb.KeyValue) error {
 			cnt++
 			return nil
 		}).Run(WithBufSize(1000000), WithBatchSize(100000)))

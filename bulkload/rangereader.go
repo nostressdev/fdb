@@ -2,23 +2,21 @@ package bulkload
 
 import (
 	"github.com/apple/foundationdb/bindings/go/src/fdb"
-	"github.com/apple/foundationdb/bindings/go/src/fdb/subspace"
 	"sync"
 )
 
 type RangeReader Reader[fdb.KeyValue]
 
-func NewRangeReader(db fdb.Database, sub subspace.Subspace, opts ...RangeReaderOptions) RangeReader {
+func NewRangeReader(db fdb.Database, kr fdb.KeyRange, opts ...RangeReaderOptions) RangeReader {
 	options := mergeRangeReaderOptions(opts...)
 	return func(ch chan fdb.KeyValue) error {
-		begin, end := sub.FDBRangeKeys()
-		keys, err := db.LocalityGetBoundaryKeys(fdb.KeyRange{Begin: begin, End: end}, options.producers-1, 0)
+		keys, err := db.LocalityGetBoundaryKeys(kr, options.producers-1, 0)
 		if err != nil {
 			return err
 		}
 		errCh := make(chan error)
 		wg := new(sync.WaitGroup)
-		keys = append(keys, end.FDBKey())
+		keys = append(keys, kr.End.FDBKey())
 		wg.Add(len(keys))
 		for len(keys) != 0 {
 			next := keys[0]
@@ -60,8 +58,8 @@ func NewRangeReader(db fdb.Database, sub subspace.Subspace, opts ...RangeReaderO
 					begin = fdb.FirstGreaterThan(lastPassed)
 				}
 				wg.Done()
-			}(fdb.KeySelector{Key: begin.FDBKey()}, nextSelector)
-			begin = next
+			}(fdb.KeySelector{Key: kr.Begin}, nextSelector)
+			kr.Begin = next
 		}
 		wg.Wait()
 		close(errCh)
