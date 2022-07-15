@@ -1,11 +1,5 @@
 github.com/apple/foundationdb/bindings/go v0.0.0-20210310184053-af36e52fdf63 h1:iCp5CWT3WaywTPAOTWY09BPYJGxb6R5vMCo2erMWUcU=
 github.com/apple/foundationdb/bindings/go v0.0.0-20210310184053-af36e52fdf63/go.mod h1:w63jdZTFCtvdjsUj5yrdKgjxaAD5uXQX6hJ7EaiLFRs=
-github.com/apple/foundationdb/bindings/go v0.0.0-20210826225424-63337ced8a4b h1:KVGwdmpBrYhnk4QPT94OHhxLWmfaHBE90f99RRDBcos=
-github.com/apple/foundationdb/bindings/go v0.0.0-20210826225424-63337ced8a4b/go.mod h1:w63jdZTFCtvdjsUj5yrdKgjxaAD5uXQX6hJ7EaiLFRs=
-github.com/apple/foundationdb/bindings/go v0.0.0-20220516194840-3edc3431fe57 h1:nV9zeoJRCoeHyEMApTMfFLSdHGFtyfx7kqOgBJ+c/uU=
-github.com/apple/foundationdb/bindings/go v0.0.0-20220516194840-3edc3431fe57/go.mod h1:w63jdZTFCtvdjsUj5yrdKgjxaAD5uXQX6hJ7EaiLFRs=
-github.com/apple/foundationdb/bindings/go v0.0.0-20220714005051-bdef35390df4 h1:HZdleGvMY8ew6OGnhMR5W4S/jSdBA9ABuBIRjCVGyqM=
-github.com/apple/foundationdb/bindings/go v0.0.0-20220714005051-bdef35390df4/go.mod h1:w63jdZTFCtvdjsUj5yrdKgjxaAD5uXQX6hJ7EaiLFRs=
 github.com/davecgh/go-spew v1.1.0 h1:ZDRjVQ15GmhC3fiQ8ni8+OwkZQO4DARzQgrnXU1Liz8=
 github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/google/go-cmp v0.5.8 h1:e6P7q2lk1O+qJJb4BtCQXlK8vWEO8V1ZeuEdJNOqZyg=
