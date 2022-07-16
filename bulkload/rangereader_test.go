@@ -42,7 +42,7 @@ func Test_RangeReader(t *testing.T) {
 
 	t.Run("cleanup", func(t *testing.T) {
 		_, err := db.Transact(func(tr fdb.Transaction) (interface{}, error) {
-			tr.Clear(sub)
+			tr.ClearRange(sub)
 			return nil, nil
 		})
 		require.NoError(t, err)
