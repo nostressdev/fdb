@@ -7,17 +7,19 @@ import (
 	"math/rand"
 )
 
-type Queue[T any] struct {
+type QueueElement tuple.TupleElement
+
+type Queue[T QueueElement] struct {
 	sub subspace.Subspace
 }
 
-func New[T any](sub subspace.Subspace) Queue[T] {
+func New[T QueueElement](sub subspace.Subspace) Queue[T] {
 	return Queue[T]{
 		sub: sub,
 	}
 }
 
-func (q *Queue[T]) Dequeue(transactor fdb.Transactor) (T, error) {
+func (q *Queue[T]) Dequeue(transactor fdb.Transactor) (*T, error) {
 	res, err := transactor.Transact(func(tr fdb.Transaction) (interface{}, error) {
 		kv, err := q.firstItem(tr)
 		if err != nil {
@@ -31,10 +33,11 @@ func (q *Queue[T]) Dequeue(transactor fdb.Transactor) (T, error) {
 		if err != nil {
 			return nil, err
 		}
-		return res[0], nil
+		return res[0].(T), nil
 	})
 	if res != nil {
-		return res.(T), err
+		resT := res.(T)
+		return &resT, err
 	}
 	return nil, err
 }
@@ -47,7 +50,7 @@ func (q *Queue[T]) Enqueue(transactor fdb.Transactor, t T) error {
 		}
 		bytes := make([]byte, 20)
 		rand.Read(bytes)
-		tr.Set(q.sub.Sub(tuple.Tuple{i + 1, bytes}), tuple.Tuple{t}.Pack())
+		tr.Set(q.sub.Sub(i+1, bytes), tuple.Tuple{t}.Pack())
 		return nil, nil
 	})
 	return err
@@ -65,12 +68,13 @@ func (q *Queue[T]) firstItem(transactor fdb.ReadTransactor) (*fdb.KeyValue, erro
 		return nil, nil
 	})
 	if res != nil {
-		return res.(*fdb.KeyValue), err
+		resKV := res.(fdb.KeyValue)
+		return &resKV, err
 	}
 	return nil, err
 }
 
-func (q *Queue[T]) lastIndex(transactor fdb.ReadTransactor) (int, error) {
+func (q *Queue[T]) lastIndex(transactor fdb.ReadTransactor) (int64, error) {
 	res, err := transactor.ReadTransact(func(tr fdb.ReadTransaction) (interface{}, error) {
 		iter := tr.GetRange(q.sub, fdb.RangeOptions{
 			Mode:    fdb.StreamingModeWantAll,
@@ -86,12 +90,12 @@ func (q *Queue[T]) lastIndex(transactor fdb.ReadTransactor) (int, error) {
 			if err != nil {
 				return nil, err
 			}
-			return t[0], nil
+			return t[0].(int64), nil
 		}
 		return nil, nil
 	})
 	if res != nil {
-		return res.(int), err
+		return res.(int64), err
 	}
 	return 0, err
 }

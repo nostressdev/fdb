@@ -15,30 +15,99 @@ func Test_Queue(t *testing.T) {
 
 	sub := subspace.Sub("Test_Queue")
 
-	t.Run("test", func(t *testing.T) {
-		type S struct {
-			x int
-		}
-		q := New[*S](sub)
+	t.Run("cleanup", func(t *testing.T) {
+		_, err := db.Transact(func(tr fdb.Transaction) (interface{}, error) {
+			tr.ClearRange(sub)
+			return nil, nil
+		})
+		require.NoError(t, err)
+	})
+
+	t.Run("test int64", func(t *testing.T) {
+		q := New[int64](sub)
 		r, err := q.Dequeue(db)
 		require.NoError(t, err, "dequeue empty queue")
-		require.Equal(t, nil, r, "equal dequeue empty queue")
-		for i := 0; i < 5; i++ {
-			require.NoError(t, q.Enqueue(db, &S{x: i}), fmt.Sprintf("enqueue %d", i))
+		require.Equal(t, true, r == nil, "equal dequeue empty queue")
+		for i := int64(0); i < 5; i++ {
+			require.NoError(t, q.Enqueue(db, i), fmt.Sprintf("enqueue %d", i))
 		}
-		for i := 5; i > 0; i-- {
+		for i := int64(0); i < 5; i++ {
 			r, err = q.Dequeue(db)
 			require.NoError(t, err, fmt.Sprintf("dequeue %d", i))
-			require.Equal(t, i, r.x, "equal queue res")
+			require.Equal(t, i, *r, "equal queue res")
 		}
 		r, err = q.Dequeue(db)
 		require.NoError(t, err, "dequeue empty queue")
-		require.Equal(t, nil, r, "equal dequeue empty queue")
+		require.Equal(t, true, r == nil, "equal dequeue empty queue")
 	})
 
 	t.Run("cleanup", func(t *testing.T) {
 		_, err := db.Transact(func(tr fdb.Transaction) (interface{}, error) {
-			tr.Clear(sub)
+			tr.ClearRange(sub)
+			return nil, nil
+		})
+		require.NoError(t, err)
+	})
+
+	t.Run("test string", func(t *testing.T) {
+		q := New[string](sub)
+		str := []string{"a", "b", "c", "d", "e"}
+		r, err := q.Dequeue(db)
+		require.NoError(t, err, "dequeue empty queue")
+		require.Equal(t, true, r == nil, "equal dequeue empty queue")
+		for i := 0; i < 5; i++ {
+			require.NoError(t, q.Enqueue(db, str[i]), fmt.Sprintf("enqueue %d", i))
+		}
+		for i := 0; i < 5; i++ {
+			r, err = q.Dequeue(db)
+			require.NoError(t, err, fmt.Sprintf("dequeue %d", i))
+			require.Equal(t, str[i], *r, "equal queue res")
+		}
+		r, err = q.Dequeue(db)
+		require.NoError(t, err, "dequeue empty queue")
+		require.Equal(t, true, r == nil, "equal dequeue empty queue")
+	})
+
+	t.Run("test int", func(t *testing.T) {
+		q := New[int](sub)
+		r, err := q.Dequeue(db)
+		require.NoError(t, err, "dequeue empty queue")
+		require.Equal(t, true, r == nil, "equal dequeue empty queue")
+		for i := 0; i < 5; i++ {
+			require.NoError(t, q.Enqueue(db, i), fmt.Sprintf("enqueue %d", i))
+		}
+		for i := 0; i < 5; i++ {
+			r, err = q.Dequeue(db)
+			require.NoError(t, err, fmt.Sprintf("dequeue %d", i))
+			require.Equal(t, i, *r, "equal queue res")
+		}
+		r, err = q.Dequeue(db)
+		require.NoError(t, err, "dequeue empty queue")
+		require.Equal(t, true, r == nil, "equal dequeue empty queue")
+	})
+
+	t.Run("test keyConvertible", func(t *testing.T) {
+		values := []fdb.KeyConvertible{fdb.Key([]byte{1}), fdb.Key([]byte{2}), fdb.Key([]byte{3}), fdb.Key([]byte{4}), fdb.Key([]byte{5})}
+		q := New[fdb.KeyConvertible](sub)
+		r, err := q.Dequeue(db)
+		require.NoError(t, err, "dequeue empty queue")
+		require.Equal(t, true, r == nil, "equal dequeue empty queue")
+		for i := 0; i < 5; i++ {
+			require.NoError(t, q.Enqueue(db, values[i]), fmt.Sprintf("enqueue %d", i))
+		}
+		for i := 0; i < 5; i++ {
+			r, err = q.Dequeue(db)
+			require.NoError(t, err, fmt.Sprintf("dequeue %d", i))
+			require.Equal(t, values[i], *r, "equal queue res")
+		}
+		r, err = q.Dequeue(db)
+		require.NoError(t, err, "dequeue empty queue")
+		require.Equal(t, true, r == nil, "equal dequeue empty queue")
+	})
+
+	t.Run("cleanup", func(t *testing.T) {
+		_, err := db.Transact(func(tr fdb.Transaction) (interface{}, error) {
+			tr.ClearRange(sub)
 			return nil, nil
 		})
 		require.NoError(t, err)
