@@ -2,10 +2,10 @@ package parser
 
 import (
 	"encoding/json"
+	"github.com/nostressdev/fdb/utils/errors"
 	"io"
 	"strings"
 
-	"github.com/nostressdev/fdb/errors"
 	"github.com/nostressdev/fdb/orm/scheme"
 	"github.com/nostressdev/fdb/orm/scheme/utils"
 	"github.com/nostressdev/fdb/orm/scheme/utils/graph"

@@ -2,7 +2,7 @@ package bulkload
 
 import "golang.org/x/exp/constraints"
 
-func RangeGenerator[T constraints.Integer](begin T, end T) Reader[T] {
+func RangeProducer[T constraints.Integer](begin T, end T) Producer[T] {
 	return func(ch chan T) error {
 		for begin < end {
 			ch <- begin
@@ -12,6 +12,6 @@ func RangeGenerator[T constraints.Integer](begin T, end T) Reader[T] {
 	}
 }
 
-func ListGenerator[T constraints.Integer](len T) Reader[T] {
-	return RangeGenerator[T](0, len)
+func ListProducer[T constraints.Integer](len T) Producer[T] {
+	return RangeProducer[T](0, len)
 }

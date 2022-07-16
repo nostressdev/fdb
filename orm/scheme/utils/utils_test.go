@@ -1,9 +1,9 @@
 package utils
 
 import (
+	"github.com/nostressdev/fdb/utils/errors"
 	"testing"
 
-	"github.com/nostressdev/fdb/errors"
 	"github.com/stretchr/testify/assert"
 )
 

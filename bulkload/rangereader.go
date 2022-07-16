@@ -2,67 +2,85 @@ package bulkload
 
 import (
 	"github.com/apple/foundationdb/bindings/go/src/fdb"
-	"sync"
+	"github.com/nostressdev/fdb/utils/future"
+	"golang.org/x/xerrors"
 )
 
-type RangeReader Reader[fdb.KeyValue]
+type RangeReader Producer[fdb.KeyValue]
 
-func NewRangeReader(db fdb.Database, kr fdb.KeyRange, opts ...RangeReaderOptions) RangeReader {
-	options := mergeRangeReaderOptions(opts...)
-	return func(ch chan fdb.KeyValue) error {
-		keys, err := db.LocalityGetBoundaryKeys(kr, options.producers-1, 0)
+func readSubRange(tr fdb.Transaction, tasks chan fdb.KeyValue, rangeStart fdb.KeySelector, rangeEnd fdb.KeySelector, options RangeReaderOptions) error {
+	for {
+		cnt := 0
+		iter := tr.Snapshot().GetRange(fdb.SelectorRange{
+			Begin: rangeStart,
+			End:   rangeEnd,
+		}, fdb.RangeOptions{
+			Mode:  fdb.StreamingModeWantAll,
+			Limit: options.batchSize,
+		}).Iterator()
+		hasElements := false
+		for iter.Advance() {
+			hasElements = true
+			if kv, err := iter.Get(); err != nil {
+				var trErr fdb.Error
+				if xerrors.As(err, &trErr) {
+					if !((trErr.Code >= 2101 && trErr.Code <= 2103) || trErr.Code == 1007) {
+						if err = tr.OnError(trErr).Get(); err != nil {
+							return err
+						}
+					}
+					tr.Reset()
+					break
+				}
+				return err
+			} else {
+				cnt++
+				rangeStart = fdb.FirstGreaterThan(kv.Key)
+				tasks <- kv
+				if cnt == options.batchSize {
+					tr.Reset()
+					break
+				}
+			}
+		}
+		if !hasElements {
+			return nil
+		}
+	}
+}
+
+func processIterFunction(db fdb.Database, tasks chan fdb.KeyValue, rangeStart fdb.Key, rangeEnd fdb.Key, options RangeReaderOptions) func() error {
+	return func() error {
+		tr, err := db.CreateTransaction()
 		if err != nil {
 			return err
 		}
-		errCh := make(chan error)
-		wg := new(sync.WaitGroup)
-		keys = append(keys, kr.End.FDBKey())
-		wg.Add(len(keys))
-		for len(keys) != 0 {
-			next := keys[0]
-			keys = keys[1:]
-			nextSelector := fdb.KeySelector{Key: next}
-			if len(keys) == 0 {
-				nextSelector = fdb.FirstGreaterThan(next)
+		return readSubRange(tr, tasks, fdb.FirstGreaterOrEqual(rangeStart), fdb.FirstGreaterOrEqual(rangeEnd), options)
+	}
+}
+
+func NewRangeReader(db fdb.Database, kr fdb.KeyRange, opts ...RangeReaderOptions) RangeReader {
+	options := mergeRangeReaderOptions(opts...)
+	return func(tasks chan fdb.KeyValue) error {
+		var keys []fdb.Key
+		if options.producers > 1 {
+			var err error
+			keys, err = db.LocalityGetBoundaryKeys(kr, options.producers-1, 0)
+			if err != nil {
+				return err
 			}
-			go func(begin fdb.KeySelector, end fdb.KeySelector) {
-				tr, err := db.CreateTransaction()
-				if err != nil {
-					wg.Done()
-					errCh <- err
-					return
-				}
-				for {
-					iter := tr.Snapshot().GetRange(fdb.SelectorRange{
-						Begin: begin,
-						End:   end,
-					}, fdb.RangeOptions{Mode: fdb.StreamingModeWantAll, Limit: options.batchSize}).Iterator()
-					cnt := 0
-					lastPassed := fdb.Key{}
-					for cnt < options.batchSize && iter.Advance() {
-						cnt++
-						if kv, err := iter.Get(); err != nil {
-							wg.Done()
-							errCh <- err
-							return
-						} else {
-							ch <- kv
-							lastPassed = kv.Key
-						}
-					}
-					if cnt != options.batchSize {
-						tr.Cancel()
-						break
-					}
-					tr.Reset()
-					begin = fdb.FirstGreaterThan(lastPassed)
-				}
-				wg.Done()
-			}(fdb.KeySelector{Key: kr.Begin}, nextSelector)
-			kr.Begin = next
 		}
-		wg.Wait()
-		close(errCh)
-		return <-errCh
+		keys = append(keys, kr.End.FDBKey())
+		futures := make([]future.FutureNil, 0, len(keys))
+		rangeStart := kr.Begin.FDBKey()
+		for len(keys) != 0 {
+			rangeEnd := keys[0]
+			keys = keys[1:]
+			futures = append(futures, future.AsyncNil(processIterFunction(
+				db, tasks, rangeStart, rangeEnd, options,
+			)))
+			rangeStart = rangeEnd
+		}
+		return future.AwaitAllNil(futures...)
 	}
 }

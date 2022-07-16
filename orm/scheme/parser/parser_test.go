@@ -1,11 +1,11 @@
 package parser
 
 import (
+	fdbErrors "github.com/nostressdev/fdb/utils/errors"
 	"os"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-	fdbErrors "github.com/nostressdev/fdb/errors"
 	"github.com/nostressdev/fdb/orm/scheme"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"

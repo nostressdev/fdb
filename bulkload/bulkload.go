@@ -2,82 +2,113 @@ package bulkload
 
 import (
 	"github.com/apple/foundationdb/bindings/go/src/fdb"
-	"sync"
+	"github.com/nostressdev/fdb/utils/future"
+	"golang.org/x/xerrors"
 )
 
 type BulkLoad[T any] interface {
 	Run(opts ...Options) error
 }
 
-type Reader[T any] func(chan T) error
-type Writer[T any] func(transaction fdb.Transaction, value T) error
+type Producer[T any] func(chan T) error
+type Consumer[T any] func(transaction fdb.Transaction, value T) error
 
 type bulkLoadImpl[T any] struct {
-	reader Reader[T]
-	writer Writer[T]
-	db     fdb.Database
+	producer Producer[T]
+	consumer Consumer[T]
+	db       fdb.Database
 }
 
-func New[T any](db fdb.Database, reader Reader[T], writer Writer[T]) BulkLoad[T] {
+func New[T any](db fdb.Database, producer Producer[T], consumer Consumer[T]) BulkLoad[T] {
 	return &bulkLoadImpl[T]{
-		reader: reader,
-		writer: writer,
-		db:     db,
+		producer: producer,
+		consumer: consumer,
+		db:       db,
+	}
+}
+
+func (bl *bulkLoadImpl[T]) processTasksSet(tr fdb.Transaction, tasksSet []T, options Options) ([]T, error) {
+	maxTasksInBatch := len(tasksSet)
+	for {
+		tr.Reset()
+		var err error
+		for index := 0; index < maxTasksInBatch; index++ {
+			err = bl.consumer(tr, tasksSet[index])
+			if err != nil {
+				break
+			}
+		}
+		if err == nil {
+			err = tr.Commit().Get()
+		}
+		var trErr fdb.Error
+		if err != nil {
+			if xerrors.As(err, &trErr) {
+				if (trErr.Code >= 2101 && trErr.Code <= 2103) || trErr.Code == 1007 {
+					maxTasksInBatch = int(float64(maxTasksInBatch) * options.degradationFactor)
+					if maxTasksInBatch == 0 {
+						return tasksSet, err
+					}
+					continue
+				}
+				if err = tr.OnError(trErr).Get(); err != nil {
+					return tasksSet, err
+				}
+				continue
+			}
+			return tasksSet, err
+		}
+		return tasksSet[maxTasksInBatch:], nil
 	}
 }
 
 func (bl *bulkLoadImpl[T]) Run(opts ...Options) error {
 	options := mergeOptions(opts...)
 	tasks := make(chan T, options.bufSize)
-	errCh := make(chan error)
-
-	go func() {
-		err := bl.reader(tasks)
-		close(tasks)
-		if err != nil {
-			errCh <- err
-		}
-	}()
-
-	wgConsumers := new(sync.WaitGroup)
-	wgConsumers.Add(options.consumers)
+	readTask := future.AsyncNil(func() error {
+		defer close(tasks)
+		return bl.producer(tasks)
+	})
+	futures := make([]future.FutureNil, 0, options.consumers)
 	for consumerIdx := 0; consumerIdx < options.consumers; consumerIdx++ {
-		go func() {
-			taskIter := make([]T, 0, options.batchSize)
-			processTasks := func(taskIter []T) error {
-				if len(taskIter) == 0 {
-					return nil
-				}
-				_, err := bl.db.Transact(func(transaction fdb.Transaction) (interface{}, error) {
-					for _, task := range taskIter {
-						if err := bl.writer(transaction, task); err != nil {
-							return nil, err
-						}
-					}
-					return nil, nil
-				})
-				return err
-			}
+		tr, err := bl.db.CreateTransaction()
+		if err != nil {
+			return err
+		}
+		futures = append(futures, future.AsyncNil(func() error {
+			tasksSet := make([]T, 0, options.batchSize)
 			for task := range tasks {
-				taskIter = append(taskIter, task)
-				if len(taskIter) == options.batchSize {
-					if err := processTasks(taskIter); err != nil {
-						wgConsumers.Done()
-						errCh <- err
-						return
+				tasksSet = append(tasksSet, task)
+				if len(tasksSet) == options.batchSize {
+					restTasksSet, err := bl.processTasksSet(tr, tasksSet, options)
+					if err != nil {
+						return err
 					}
-					taskIter = nil
+					tasksSet = restTasksSet
 				}
 			}
-			if err := processTasks(taskIter); err != nil {
-				wgConsumers.Done()
-				errCh <- err
-				return
+			for len(tasksSet) > 0 {
+				restTasksSet, err := bl.processTasksSet(tr, tasksSet, options)
+				if err != nil {
+					return err
+				}
+				tasksSet = restTasksSet
 			}
-			wgConsumers.Done()
-		}()
+			return nil
+		}))
 	}
-	wgConsumers.Wait()
-	close(errCh)
-	return <-errCh
+	readAllTasksIfErrorFuture := future.AsyncNil(func() error {
+		err := future.AwaitAllNil(futures...)
+		if err != nil {
+			for range tasks {
+			}
+			return err
+		}
+		return nil
+	})
+	err := readTask.Await()
+	if err != nil {
+		return err
+	}
+	return readAllTasksIfErrorFuture.Await()
 }
