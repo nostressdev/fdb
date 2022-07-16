@@ -1,10 +1,11 @@
-package bulkload
+package rangereader
 
 import (
 	"fmt"
 	"github.com/apple/foundationdb/bindings/go/src/fdb"
 	"github.com/apple/foundationdb/bindings/go/src/fdb/subspace"
 	"github.com/apple/foundationdb/bindings/go/src/fdb/tuple"
+	"github.com/nostressdev/fdb/bulkload"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"testing"
@@ -21,26 +22,26 @@ func Test_RangeReader(t *testing.T) {
 	sub := subspace.Sub("Test_RangeReader")
 
 	t.Run("init", func(t *testing.T) {
-		require.NoError(t, New[int](db,
-			ListProducer(kTestSize),
+		require.NoError(t, bulkload.New[int](db,
+			bulkload.ListProducer(kTestSize),
 			func(tr fdb.Transaction, value int) error {
 				tr.Set(sub.Pack(tuple.Tuple{value}), []byte{})
 				return nil
 			},
 		).Run(
-			WithConsumersOption(kMaxConsumers),
-			WithBatchSize(2500),
-			WithBufSize(kTestSize),
+			bulkload.WithConsumersOption(kMaxConsumers),
+			bulkload.WithBatchSize(2500),
+			bulkload.WithBufSize(kTestSize),
 		))
 	})
 
 	tests := []struct {
-		options RangeReaderOptions
+		options Options
 	}{
-		{options: RangeReaderOptions{batchSize: 1000, producers: 1}},
-		{options: RangeReaderOptions{batchSize: 10000000, producers: 1}},
-		{options: RangeReaderOptions{batchSize: 1000, producers: 50}},
-		{options: RangeReaderOptions{batchSize: 1000000, producers: 50}},
+		{options: Options{batchSize: 1000, producers: 1}},
+		{options: Options{batchSize: 10000000, producers: 1}},
+		{options: Options{batchSize: 1000, producers: 50}},
+		{options: Options{batchSize: 1000000, producers: 50}},
 	}
 
 	for index := range tests {
@@ -48,7 +49,7 @@ func Test_RangeReader(t *testing.T) {
 		t.Run(fmt.Sprintf("Test #%v", index), func(t *testing.T) {
 			cnt := 0
 			begin, end := sub.FDBRangeKeys()
-			require.NoError(t, New[fdb.KeyValue](db, Producer[fdb.KeyValue](
+			require.NoError(t, bulkload.New[fdb.KeyValue](db, bulkload.Producer[fdb.KeyValue](
 				NewRangeReader(db,
 					fdb.KeyRange{
 						Begin: begin,
@@ -60,7 +61,7 @@ func Test_RangeReader(t *testing.T) {
 					cnt++
 					return nil
 				},
-			).Run(WithBufSize(kTestSize), WithBatchSize(kTestSize)))
+			).Run(bulkload.WithBufSize(kTestSize), bulkload.WithBatchSize(kTestSize)))
 			assert.Equal(t, kTestSize, cnt)
 		})
 	}

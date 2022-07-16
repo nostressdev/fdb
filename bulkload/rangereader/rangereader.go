@@ -1,14 +1,15 @@
-package bulkload
+package rangereader
 
 import (
 	"github.com/apple/foundationdb/bindings/go/src/fdb"
+	"github.com/nostressdev/fdb/bulkload"
 	"github.com/nostressdev/fdb/utils/future"
 	"golang.org/x/xerrors"
 )
 
-type RangeReader Producer[fdb.KeyValue]
+type RangeReader bulkload.Producer[fdb.KeyValue]
 
-func readSubRange(tr fdb.Transaction, tasks chan fdb.KeyValue, rangeStart fdb.KeySelector, rangeEnd fdb.KeySelector, options RangeReaderOptions) error {
+func readSubRange(tr fdb.Transaction, tasks chan fdb.KeyValue, rangeStart fdb.KeySelector, rangeEnd fdb.KeySelector, options Options) error {
 	for {
 		cnt := 0
 		iter := tr.Snapshot().GetRange(fdb.SelectorRange{
@@ -49,7 +50,7 @@ func readSubRange(tr fdb.Transaction, tasks chan fdb.KeyValue, rangeStart fdb.Ke
 	}
 }
 
-func processIterFunction(db fdb.Database, tasks chan fdb.KeyValue, rangeStart fdb.Key, rangeEnd fdb.Key, options RangeReaderOptions) func() error {
+func processIterFunction(db fdb.Database, tasks chan fdb.KeyValue, rangeStart fdb.Key, rangeEnd fdb.Key, options Options) func() error {
 	return func() error {
 		tr, err := db.CreateTransaction()
 		if err != nil {
@@ -59,8 +60,8 @@ func processIterFunction(db fdb.Database, tasks chan fdb.KeyValue, rangeStart fd
 	}
 }
 
-func NewRangeReader(db fdb.Database, kr fdb.KeyRange, opts ...RangeReaderOptions) RangeReader {
-	options := mergeRangeReaderOptions(opts...)
+func NewRangeReader(db fdb.Database, kr fdb.KeyRange, opts ...Options) RangeReader {
+	options := mergeOptions(opts...)
 	return func(tasks chan fdb.KeyValue) error {
 		var keys []fdb.Key
 		if options.producers > 1 {

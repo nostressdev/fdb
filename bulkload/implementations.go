@@ -1,6 +1,8 @@
 package bulkload
 
-import "golang.org/x/exp/constraints"
+import (
+	"golang.org/x/exp/constraints"
+)
 
 func RangeProducer[T constraints.Integer](begin T, end T) Producer[T] {
 	return func(ch chan T) error {

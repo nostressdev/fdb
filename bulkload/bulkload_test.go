@@ -5,6 +5,7 @@ import (
 	"github.com/apple/foundationdb/bindings/go/src/fdb"
 	"github.com/apple/foundationdb/bindings/go/src/fdb/subspace"
 	"github.com/apple/foundationdb/bindings/go/src/fdb/tuple"
+	"github.com/nostressdev/fdb/bulkload/rangereader"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -70,13 +71,10 @@ func Test_BulkLoadWrite(t *testing.T) {
 
 			m := map[uint32]struct{}{}
 
-			require.NoError(t, New[fdb.KeyValue](db, Producer[fdb.KeyValue](NewRangeReader(db, fdb.KeyRange{
+			require.NoError(t, New[fdb.KeyValue](db, Producer[fdb.KeyValue](rangereader.NewRangeReader(db, fdb.KeyRange{
 				Begin: subBegin,
 				End:   subEnd,
-			}, RangeReaderOptions{
-				batchSize: int(tt.cnt),
-				producers: 50,
-			})), func(tr fdb.Transaction, value fdb.KeyValue) error {
+			}, rangereader.WithBatchSize(int(tt.cnt)), rangereader.WithProducersOption(50))), func(tr fdb.Transaction, value fdb.KeyValue) error {
 				x := binary.BigEndian.Uint32(value.Value)
 				if x < tt.cnt {
 					m[x] = struct{}{}

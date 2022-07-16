@@ -54,36 +54,3 @@ func mergeOptions(options ...Options) Options {
 	}
 	return result
 }
-
-type RangeReaderOptions struct {
-	batchSize int
-	producers int
-}
-
-func RangeReaderWithProducersOption(value int) RangeReaderOptions {
-	return RangeReaderOptions{
-		producers: value,
-	}
-}
-
-func RangeReaderWithBatchSize(value int) RangeReaderOptions {
-	return RangeReaderOptions{
-		batchSize: value,
-	}
-}
-
-func mergeRangeReaderOptions(options ...RangeReaderOptions) RangeReaderOptions {
-	result := RangeReaderOptions{
-		producers: 1,
-		batchSize: 1,
-	}
-	for _, option := range options {
-		if result.producers < option.producers {
-			result.producers = option.producers
-		}
-		if result.batchSize < option.batchSize {
-			result.batchSize = option.batchSize
-		}
-	}
-	return result
-}
