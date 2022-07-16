@@ -3,19 +3,20 @@ package queue
 import (
 	"github.com/apple/foundationdb/bindings/go/src/fdb"
 	"github.com/apple/foundationdb/bindings/go/src/fdb/subspace"
-	"github.com/apple/foundationdb/bindings/go/src/fdb/tuple"
 	"math/rand"
 )
 
-type QueueElement tuple.TupleElement
-
-type Queue[T QueueElement] struct {
-	sub subspace.Subspace
+type Queue[T any] struct {
+	sub    subspace.Subspace
+	pack   func(T) ([]byte, error)
+	unpack func([]byte) (T, error)
 }
 
-func New[T QueueElement](sub subspace.Subspace) Queue[T] {
+func New[T any](sub subspace.Subspace, pack func(T) ([]byte, error), unpack func([]byte) (T, error)) Queue[T] {
 	return Queue[T]{
-		sub: sub,
+		sub:    sub,
+		pack:   pack,
+		unpack: unpack,
 	}
 }
 
@@ -29,11 +30,11 @@ func (q *Queue[T]) Dequeue(transactor fdb.Transactor) (*T, error) {
 			return nil, nil
 		}
 		tr.Clear(kv.Key)
-		res, err := tuple.Unpack(kv.Value)
+		res, err := q.unpack(kv.Value)
 		if err != nil {
 			return nil, err
 		}
-		return res[0].(T), nil
+		return res, nil
 	})
 	if res != nil {
 		resT := res.(T)
@@ -50,7 +51,11 @@ func (q *Queue[T]) Enqueue(transactor fdb.Transactor, t T) error {
 		}
 		bytes := make([]byte, 20)
 		rand.Read(bytes)
-		tr.Set(q.sub.Sub(i+1, bytes), tuple.Tuple{t}.Pack())
+		v, err := q.pack(t)
+		if err != nil {
+			return nil, err
+		}
+		tr.Set(q.sub.Sub(i+1, bytes), v)
 		return nil, nil
 	})
 	return err
