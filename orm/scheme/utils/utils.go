@@ -1,6 +1,8 @@
 package utils
 
-import "github.com/nostressdev/fdb/errors"
+import (
+	"github.com/nostressdev/fdb/utils/errors"
+)
 
 func Validate(expression bool, text string) {
 	if expression {

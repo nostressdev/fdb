@@ -1,9 +1,9 @@
 package scheme
 
 import (
+	"github.com/nostressdev/fdb/utils/errors"
 	"strings"
 
-	"github.com/nostressdev/fdb/errors"
 	"github.com/nostressdev/fdb/orm/scheme/utils"
 	"github.com/nostressdev/fdb/orm/scheme/utils/graph"
 )

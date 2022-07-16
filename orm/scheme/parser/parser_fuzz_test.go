@@ -1,7 +1,7 @@
 package parser
 
 import (
-	"github.com/nostressdev/fdb/errors"
+	"github.com/nostressdev/fdb/utils/errors"
 	"github.com/stretchr/testify/assert"
 	"os"
 	"strings"
