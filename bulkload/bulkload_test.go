@@ -235,10 +235,7 @@ func Test_OneBigTransaction(t *testing.T) {
 	sub := subspace.Sub("TestSimpleWrite")
 	require.Error(t,
 		New(db,
-			func(ch chan int) error {
-				ch <- 0
-				return nil
-			},
+			ProducerFromList([]int{0}),
 			func(tr fdb.Transaction, value int) error {
 				for i := 0; i < 1000000; i++ {
 					tr.Set(sub.Sub(tuple.Tuple{i}.Pack()), []byte{})
