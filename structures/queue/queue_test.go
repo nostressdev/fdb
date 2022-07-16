@@ -119,6 +119,10 @@ func Test_Queue(t *testing.T) {
 		r, err = q.Dequeue(db)
 		require.NoError(t, err, "dequeue empty queue")
 		require.Equal(t, true, r == nil, "equal dequeue empty queue")
+		require.NoError(t, q.Enqueue(db, uint64(9223372036854775808)), uint64(9223372036854775808))
+		r, err = q.Dequeue(db)
+		require.NoError(t, err, uint64(9223372036854775808))
+		require.Equal(t, uint64(9223372036854775808), *r, "equal queue res")
 	})
 
 	t.Run("cleanup", func(t *testing.T) {
