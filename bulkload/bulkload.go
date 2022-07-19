@@ -32,7 +32,11 @@ func (bl *bulkLoadImpl[T]) processTasksSet(tr fdb.Transaction, tasksSet []T, opt
 	maxTasksInBatch := len(tasksSet)
 	for {
 		tr.Reset()
-		var err error
+		err := tr.Options().SetNextWriteNoWriteConflictRange()
+		if err != nil {
+			fmt.Println(err)
+			continue
+		}
 		for index := 0; index < maxTasksInBatch; index++ {
 			err = bl.consumer(tr, tasksSet[index])
 			if err != nil {
