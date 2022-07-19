@@ -1,6 +1,7 @@
 package bulkload
 
 import (
+	"fmt"
 	"github.com/apple/foundationdb/bindings/go/src/fdb"
 	"github.com/nostressdev/fdb/utils/future"
 	"golang.org/x/xerrors"
@@ -35,6 +36,7 @@ func (bl *bulkLoadImpl[T]) processTasksSet(tr fdb.Transaction, tasksSet []T, opt
 		for index := 0; index < maxTasksInBatch; index++ {
 			err = bl.consumer(tr, tasksSet[index])
 			if err != nil {
+				fmt.Println(err)
 				break
 			}
 		}
@@ -49,11 +51,13 @@ func (bl *bulkLoadImpl[T]) processTasksSet(tr fdb.Transaction, tasksSet []T, opt
 					if maxTasksInBatch == 0 {
 						return tasksSet, err
 					}
+					fmt.Println(trErr.Error())
 					continue
 				}
 				if err = tr.OnError(trErr).Get(); err != nil {
 					return tasksSet, err
 				}
+				fmt.Println(trErr.Error())
 				continue
 			}
 			return tasksSet, err
