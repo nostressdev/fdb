@@ -14,10 +14,10 @@ func (i *fdbIterator) Advance() bool {
 	return i.it.Advance()
 }
 
-func (i *fdbIterator) Get() ([]byte, error) {
+func (i *fdbIterator) Get() (fdb.KeyValue, error) {
 	kv, err := i.it.Get()
 	if err != nil {
-		return nil, err
+		return fdb.KeyValue{}, err
 	}
-	return kv.Value, err
+	return kv, err
 }

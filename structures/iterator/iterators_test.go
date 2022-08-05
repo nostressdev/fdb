@@ -14,9 +14,9 @@ import (
 )
 
 const (
-	cntIterators = 100
-	cntValues    = 100
-	chance       = 0.98
+	cntIterators = 1
+	cntValues    = 1
+	chance       = 1
 )
 
 func Test_Iterators(t *testing.T) {
@@ -32,6 +32,10 @@ func Test_Iterators(t *testing.T) {
 			return nil, nil
 		})
 		require.NoError(t, err)
+	}
+
+	cmp := func(kv1, kv2 fdb.KeyValue) int {
+		return bytes.Compare(kv1.Value, kv2.Value)
 	}
 
 	t.Run("cleanup start", cleanup)
@@ -68,23 +72,23 @@ func Test_Iterators(t *testing.T) {
 	})
 	t.Run("merge", func(t *testing.T) {
 		_, err := db.ReadTransact(func(tr fdb.ReadTransaction) (interface{}, error) {
-			it, err := MergeRanges(tr, false, bytes.Compare, rs...)
+			it, err := MergeRanges(tr, false, cmp, rs...)
 			require.NoError(t, err, "create iterator")
 			for _, k := range keys {
 				log.Println("k =", k)
 				if it.Advance() {
-					v, err := it.Get()
+					kv, err := it.Get()
 					require.NoError(t, err, "get iterator")
-					log.Println("v =", v)
-					require.Equal(t, k, v[0], "equal")
+					log.Println("kv =", kv)
+					require.Equal(t, k, kv.Value[0], "equal")
 				} else {
 					require.NoError(t, fmt.Errorf("iterator not advance"))
 				}
 			}
 			if it.Advance() {
-				v, err := it.Get()
+				kv, err := it.Get()
 				require.NoError(t, err, "get iterator last")
-				require.NoError(t, fmt.Errorf("more get in iterator, value=%s", string(v)))
+				require.NoError(t, fmt.Errorf("more get in iterator, value=%s", string(kv.Value)))
 			}
 			return nil, nil
 		})
@@ -103,23 +107,23 @@ func Test_Iterators(t *testing.T) {
 	})
 	t.Run("intersect", func(t *testing.T) {
 		_, err := db.ReadTransact(func(tr fdb.ReadTransaction) (interface{}, error) {
-			it, err := IntersectRanges(tr, false, bytes.Compare, rs...)
+			it, err := IntersectRanges(tr, false, cmp, rs...)
 			require.NoError(t, err, "create iterator")
 			for _, k := range keys {
 				log.Println("k =", k)
 				if it.Advance() {
-					v, err := it.Get()
+					kv, err := it.Get()
 					require.NoError(t, err, "get iterator")
-					log.Println("v =", v)
-					require.Equal(t, k, v[0], "equal")
+					log.Println("kv =", kv)
+					require.Equal(t, k, kv.Value[0], "equal")
 				} else {
 					require.NoError(t, fmt.Errorf("iterator not advance"))
 				}
 			}
 			if it.Advance() {
-				v, err := it.Get()
+				kv, err := it.Get()
 				require.NoError(t, err, "get iterator last")
-				require.NoError(t, fmt.Errorf("more get in iterator, value=%s", string(v)))
+				require.NoError(t, fmt.Errorf("more get in iterator, value=%s", string(kv.Value)))
 			}
 			return nil, nil
 		})
@@ -127,27 +131,27 @@ func Test_Iterators(t *testing.T) {
 	})
 	t.Run("intersect+merge", func(t *testing.T) {
 		_, err := db.ReadTransact(func(tr fdb.ReadTransaction) (interface{}, error) {
-			it1, err := IntersectRanges(tr, false, bytes.Compare, rs...)
+			it1, err := IntersectRanges(tr, false, cmp, rs...)
 			require.NoError(t, err, "create iterator")
-			it2, err := MergeRanges(tr, false, bytes.Compare, rs...)
+			it2, err := MergeRanges(tr, false, cmp, rs...)
 			require.NoError(t, err, "create iterator")
-			it, err := IntersectIterators(bytes.Compare, it1, it2)
+			it, err := IntersectIterators(cmp, it1, it2)
 			require.NoError(t, err, "create iterator")
 			for _, k := range keys {
 				log.Println("k =", k)
 				if it.Advance() {
-					v, err := it.Get()
+					kv, err := it.Get()
 					require.NoError(t, err, "get iterator")
-					log.Println("v =", v)
-					require.Equal(t, k, v[0], "equal")
+					log.Println("kv =", kv)
+					require.Equal(t, k, kv.Value[0], "equal")
 				} else {
 					require.NoError(t, fmt.Errorf("iterator not advance"))
 				}
 			}
 			if it.Advance() {
-				v, err := it.Get()
+				kv, err := it.Get()
 				require.NoError(t, err, "get iterator last")
-				require.NoError(t, fmt.Errorf("more get in iterator, value=%s", string(v)))
+				require.NoError(t, fmt.Errorf("more get in iterator, value=%s", string(kv.Value)))
 			}
 			return nil, nil
 		})
@@ -158,17 +162,16 @@ func Test_Iterators(t *testing.T) {
 		_, err := db.ReadTransact(func(tr fdb.ReadTransaction) (interface{}, error) {
 			var r fdb.Range
 			r = sub.Sub("hello")
-			rs = append(rs, r)
-			it1, err := IntersectRanges(tr, false, bytes.Compare, rs...)
+			it1, err := IntersectRanges(tr, false, cmp, append(rs, r)...)
 			require.NoError(t, err, "create iterator")
-			it2, err := MergeRanges(tr, false, bytes.Compare, rs...)
+			it2, err := MergeRanges(tr, false, cmp, append(rs, r)...)
 			require.NoError(t, err, "create iterator")
-			it, err := IntersectIterators(bytes.Compare, it1, it2)
+			it, err := IntersectIterators(cmp, it1, it2)
 			require.NoError(t, err, "create iterator")
 			if it.Advance() {
-				v, err := it.Get()
+				kv, err := it.Get()
 				require.NoError(t, err, "get iterator last")
-				require.NoError(t, fmt.Errorf("more get in iterator, value=%s", string(v)))
+				require.NoError(t, fmt.Errorf("more get in iterator, value=%s", string(kv.Value)))
 			}
 			return nil, nil
 		})
@@ -177,12 +180,12 @@ func Test_Iterators(t *testing.T) {
 
 	t.Run("intersect 0", func(t *testing.T) {
 		_, err := db.ReadTransact(func(tr fdb.ReadTransaction) (interface{}, error) {
-			it, err := IntersectRanges(tr, false, bytes.Compare)
+			it, err := IntersectRanges(tr, false, cmp)
 			require.NoError(t, err, "create iterator")
 			if it.Advance() {
-				v, err := it.Get()
+				kv, err := it.Get()
 				require.NoError(t, err, "get iterator last")
-				require.NoError(t, fmt.Errorf("more get in iterator, value=%s", string(v)))
+				require.NoError(t, fmt.Errorf("more get in iterator, value=%s", string(kv.Value)))
 			}
 			return nil, nil
 		})
@@ -192,20 +195,20 @@ func Test_Iterators(t *testing.T) {
 	t.Run("intersect 1", func(t *testing.T) {
 		_, err := db.Transact(func(tr fdb.Transaction) (interface{}, error) {
 			tr.Set(sub.Sub("hello").Sub("hello"), []byte("hello"))
-			it, err := IntersectRanges(tr, false, bytes.Compare, sub.Sub("hello"))
+			it, err := IntersectRanges(tr, false, cmp, sub.Sub("hello"))
 			require.NoError(t, err, "create iterator")
 			if it.Advance() {
-				v, err := it.Get()
+				kv, err := it.Get()
 				require.NoError(t, err, "get iterator")
-				log.Println("v =", v)
-				require.Equal(t, "hello", string(v), "equal")
+				log.Println("kv =", kv)
+				require.Equal(t, "hello", string(kv.Value), "equal")
 			} else {
 				require.NoError(t, fmt.Errorf("iterator not advance"))
 			}
 			if it.Advance() {
-				v, err := it.Get()
+				kv, err := it.Get()
 				require.NoError(t, err, "get iterator last")
-				require.NoError(t, fmt.Errorf("more get in iterator, value=%s", string(v)))
+				require.NoError(t, fmt.Errorf("more get in iterator, value=%s", string(kv.Value)))
 			}
 			return nil, nil
 		})

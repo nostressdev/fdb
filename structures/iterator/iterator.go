@@ -4,10 +4,10 @@ import "github.com/apple/foundationdb/bindings/go/src/fdb"
 
 type Iterator interface {
 	Advance() bool
-	Get() ([]byte, error) // get only values from fdb.KeyValue
+	Get() (fdb.KeyValue, error)
 }
 
-type Comparator func(a, b []byte) int // <0 means earlier, == 0 means equal
+type Comparator func(kv1, kv2 fdb.KeyValue) int // <0 means earlier, == 0 means equal
 
 func MergeRanges(t fdb.ReadTransaction, reverse bool, c Comparator, rs ...fdb.Range) (Iterator, error) {
 	its := getIterators(t, reverse, rs...)

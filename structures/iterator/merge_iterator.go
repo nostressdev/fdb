@@ -1,34 +1,36 @@
 package iterator
 
+import "github.com/apple/foundationdb/bindings/go/src/fdb"
+
 type mergeIterator struct {
 	its []Iterator
-	vs  [][]byte
+	kvs []fdb.KeyValue
 	end bool
 	c   Comparator
 }
 
 func newMergeIterator(its []Iterator, c Comparator) (*mergeIterator, error) {
-	vs := make([][]byte, 0, len(its))
+	kvs := make([]fdb.KeyValue, 0, len(its))
 	for _, it := range its {
 		if it.Advance() {
-			v, err := it.Get()
+			kv, err := it.Get()
 			if err != nil {
 				return nil, err
 			}
-			vs = append(vs, v)
+			kvs = append(kvs, kv)
 		} else {
-			vs = append(vs, nil)
+			kvs = append(kvs, fdb.KeyValue{})
 		}
 	}
 
 	it := &mergeIterator{
 		its: its,
-		vs:  vs,
+		kvs: kvs,
 		c:   c,
 		end: true,
 	}
-	for _, v := range it.vs {
-		if v != nil {
+	for _, kv := range it.kvs {
+		if !isKVEmpty(kv) {
 			it.end = false
 			break
 		}
@@ -41,36 +43,36 @@ func (it *mergeIterator) Advance() bool {
 	return !it.end
 }
 
-func (it *mergeIterator) Get() ([]byte, error) {
-	var res []byte
+func (it *mergeIterator) Get() (fdb.KeyValue, error) {
+	var res fdb.KeyValue
 
-	for _, v := range it.vs {
-		if v == nil {
+	for _, kv := range it.kvs {
+		if isKVEmpty(kv) {
 			continue
 		}
-		if res == nil || it.c(v, res) < 0 {
-			res = v
+		if isKVEmpty(res) || it.c(kv, res) < 0 {
+			res = kv
 		}
 	}
 
 	for i, iter := range it.its {
-		if it.c(it.vs[i], res) != 0 {
+		if isKVEmpty(it.kvs[i]) || it.c(it.kvs[i], res) != 0 {
 			continue
 		}
 		if iter.Advance() {
 			var err error
-			it.vs[i], err = iter.Get()
+			it.kvs[i], err = iter.Get()
 			if err != nil {
-				return nil, err
+				return fdb.KeyValue{}, err
 			}
 		} else {
-			it.vs[i] = nil
+			it.kvs[i] = fdb.KeyValue{}
 		}
 	}
 
 	it.end = true
-	for _, v := range it.vs {
-		if v != nil {
+	for _, kv := range it.kvs {
+		if !isKVEmpty(kv) {
 			it.end = false
 			break
 		}

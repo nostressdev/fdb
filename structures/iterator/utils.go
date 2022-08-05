@@ -12,3 +12,7 @@ func getIterators(t fdb.ReadTransaction, reverse bool, rs ...fdb.Range) []Iterat
 	}
 	return its
 }
+
+func isKVEmpty(kv fdb.KeyValue) bool {
+	return kv.Key == nil && kv.Value == nil
+}

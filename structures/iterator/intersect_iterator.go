@@ -1,33 +1,35 @@
 package iterator
 
+import "github.com/apple/foundationdb/bindings/go/src/fdb"
+
 type intersectIterator struct { // necessary moveNext() when created
 	its  []Iterator
-	vs   [][]byte
-	next []byte //synchronized with vs
+	kvs  []fdb.KeyValue
+	next fdb.KeyValue //synchronized with kvs
 	c    Comparator
 }
 
 func newIntersectIterator(its []Iterator, c Comparator) (*intersectIterator, error) {
-	vs := make([][]byte, 0, len(its))
+	kvs := make([]fdb.KeyValue, 0, len(its))
 	for _, it := range its {
 		if it.Advance() {
-			v, err := it.Get()
+			kv, err := it.Get()
 			if err != nil {
 				return nil, err
 			}
-			vs = append(vs, v)
+			kvs = append(kvs, kv)
 		} else {
 			return &intersectIterator{
 				its:  its,
-				next: nil,
+				next: fdb.KeyValue{},
 				c:    c,
 			}, nil
 		}
 	}
 	it := &intersectIterator{
 		its:  its,
-		vs:   vs,
-		next: nil,
+		kvs:  kvs,
+		next: fdb.KeyValue{},
 		c:    c,
 	}
 	if err := it.moveNext(); err != nil {
@@ -37,42 +39,42 @@ func newIntersectIterator(its []Iterator, c Comparator) (*intersectIterator, err
 }
 
 func (it *intersectIterator) Advance() bool {
-	return it.next != nil
+	return !isKVEmpty(it.next)
 }
 
-func (it *intersectIterator) Get() ([]byte, error) {
+func (it *intersectIterator) Get() (fdb.KeyValue, error) {
 	res := it.next
 	for i, iter := range it.its {
 		if iter.Advance() {
-			v, err := iter.Get()
+			kv, err := iter.Get()
 			if err != nil {
-				return nil, err
+				return fdb.KeyValue{}, err
 			}
-			it.vs[i] = v
+			it.kvs[i] = kv
 		} else {
-			it.next = nil
+			it.next = fdb.KeyValue{}
 			return res, nil
 		}
 	}
 	if err := it.moveNext(); err != nil {
-		return nil, err
+		return fdb.KeyValue{}, err
 	}
 	return res, nil
 }
 
 func (it *intersectIterator) moveNext() error {
-	var res []byte
+	var res fdb.KeyValue
 	k := -1
 
-	for i, v := range it.vs {
-		if res == nil {
-			res = v
+	for i, kv := range it.kvs {
+		if isKVEmpty(res) {
+			res = kv
 			k = i
 			break
 		}
 	}
-	if res == nil {
-		it.next = nil
+	if isKVEmpty(res) {
+		it.next = fdb.KeyValue{}
 		return nil
 	}
 
@@ -80,26 +82,26 @@ func (it *intersectIterator) moveNext() error {
 		if i == k {
 			continue
 		}
-		c := it.c(it.vs[i], res)
+		c := it.c(it.kvs[i], res)
 		if c == 0 {
 			continue
 		}
 		if c < 0 {
 			for true {
 				if it.its[i].Advance() {
-					v, err := it.its[i].Get()
+					kv, err := it.its[i].Get()
 					if err != nil {
-						it.next = nil
+						it.next = fdb.KeyValue{}
 						return err
 					}
-					c = it.c(v, res)
+					c = it.c(kv, res)
 					if c >= 0 {
-						it.vs[i] = v
+						it.kvs[i] = kv
 						break
 					}
 				} else {
-					it.next = nil
-					it.vs[i] = nil
+					it.next = fdb.KeyValue{}
+					it.kvs[i] = fdb.KeyValue{}
 					return nil
 				}
 			}
@@ -108,7 +110,7 @@ func (it *intersectIterator) moveNext() error {
 			}
 		}
 		if c > 0 {
-			res = it.vs[i]
+			res = it.kvs[i]
 			k = i
 			i = -1
 		}
