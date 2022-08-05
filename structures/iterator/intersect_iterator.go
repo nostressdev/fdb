@@ -3,12 +3,12 @@ package iterator
 type intersectIterator struct { // necessary moveNext() when created
 	its  []Iterator
 	vs   [][]byte
-	next []byte
+	next []byte //synchronized with vs
 	c    comparator
 }
 
 func newIntersectIterator(its []Iterator, c comparator) (*intersectIterator, error) {
-	vs := make([][]byte, 0)
+	vs := make([][]byte, 0, len(its))
 	for _, it := range its {
 		if it.Advance() {
 			v, err := it.Get()
@@ -65,10 +65,6 @@ func (it *intersectIterator) moveNext() error {
 	k := -1
 
 	for i, v := range it.vs {
-		if v == nil {
-			it.next = nil
-			return nil
-		}
 		if res == nil {
 			res = v
 			k = i
