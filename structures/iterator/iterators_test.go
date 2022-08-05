@@ -14,9 +14,9 @@ import (
 )
 
 const (
-	cntIterators = 1
-	cntValues    = 1
-	chance       = 1
+	cntIterators = 100
+	cntValues    = 100
+	chance       = 0.98
 )
 
 func Test_Iterators(t *testing.T) {
