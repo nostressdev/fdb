@@ -8,7 +8,7 @@ type mergeIterator struct {
 }
 
 func newMergeIterator(its []Iterator, c comparator) (*mergeIterator, error) {
-	vs := make([][]byte, 0)
+	vs := make([][]byte, 0, len(its))
 	for _, it := range its {
 		if it.Advance() {
 			v, err := it.Get()
@@ -43,26 +43,29 @@ func (it *mergeIterator) Advance() bool {
 
 func (it *mergeIterator) Get() ([]byte, error) {
 	var res []byte
-	k := -1
 
-	for i, v := range it.vs {
+	for _, v := range it.vs {
 		if v == nil {
 			continue
 		}
 		if res == nil || it.c(v, res) < 0 {
-			k = i
 			res = v
 		}
 	}
 
-	if it.its[k].Advance() {
-		var err error
-		it.vs[k], err = it.its[k].Get()
-		if err != nil {
-			return nil, err
+	for i, iter := range it.its {
+		if it.c(it.vs[i], res) != 0 {
+			continue
 		}
-	} else {
-		it.vs[k] = nil
+		if iter.Advance() {
+			var err error
+			it.vs[i], err = iter.Get()
+			if err != nil {
+				return nil, err
+			}
+		} else {
+			it.vs[i] = nil
+		}
 	}
 
 	it.end = true
