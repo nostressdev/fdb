@@ -4,10 +4,10 @@ type intersectIterator struct { // necessary moveNext() when created
 	its  []Iterator
 	vs   [][]byte
 	next []byte //synchronized with vs
-	c    comparator
+	c    Comparator
 }
 
-func newIntersectIterator(its []Iterator, c comparator) (*intersectIterator, error) {
+func newIntersectIterator(its []Iterator, c Comparator) (*intersectIterator, error) {
 	vs := make([][]byte, 0, len(its))
 	for _, it := range its {
 		if it.Advance() {

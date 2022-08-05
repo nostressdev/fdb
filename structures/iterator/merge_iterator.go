@@ -4,10 +4,10 @@ type mergeIterator struct {
 	its []Iterator
 	vs  [][]byte
 	end bool
-	c   comparator
+	c   Comparator
 }
 
-func newMergeIterator(its []Iterator, c comparator) (*mergeIterator, error) {
+func newMergeIterator(its []Iterator, c Comparator) (*mergeIterator, error) {
 	vs := make([][]byte, 0, len(its))
 	for _, it := range its {
 		if it.Advance() {
